@@ -1,0 +1,40 @@
+{
+  "name": "recflow",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@supabase/supabase-js": "^2.108.2",
+    "@wavesurfer/react": "^1.0.12",
+    "framer-motion": "^12.42.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.0",
+    "three": "^0.185.0",
+    "wavesurfer.js": "^7.12.8",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.185.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "autoprefixer": "^10.5.2",
+    "oxlint": "^1.69.0",
+    "postcss": "^8.5.15",
+    "supabase": "^2.108.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.0",
+    "wrangler": "^4.105.0"
+  }
+}
