@@ -39,10 +39,8 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
     setError('')
 
     try {
-      // 1. Get presigned PUT URL
       const { uploadUrl, audioKey } = await getUploadUrl(trackId, file.name, file.type)
 
-      // 2. Upload directly to R2
       setProgress(10)
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
@@ -52,7 +50,6 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
       if (!uploadRes.ok) throw new Error('Upload to R2 failed')
       setProgress(80)
 
-      // 3. Insert version row
       const { error: dbErr } = await supabase.from('versions').insert({
         track_id: trackId,
         audio_key: audioKey,
@@ -62,7 +59,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         description: description.trim() || null,
         tags,
         uploaded_by: user.id,
-        version_number: 0, // overridden by trigger
+        version_number: 0,
       })
       if (dbErr) throw dbErr
       setProgress(100)
@@ -84,9 +81,9 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
 
   return (
     <Modal open={open} onClose={onClose} title="Upload New Version">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* File drop zone */}
+      <form id="upload-version-form" onSubmit={handleSubmit} className="space-y-4">
         <div
+          id="upload-dropzone"
           onClick={() => fileRef.current?.click()}
           className="border-2 border-dashed border-white/10 hover:border-accent/40 rounded-xl p-6 text-center cursor-pointer transition-colors"
         >
@@ -111,7 +108,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
           />
         </div>
 
-        <div>
+        <div id="upload-description">
           <label className="block text-xs text-muted mb-1">What changed? (optional)</label>
           <textarea
             value={description}
@@ -122,7 +119,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
           />
         </div>
 
-        <div>
+        <div id="upload-tags">
           <label className="block text-xs text-muted mb-1">Tags</label>
           <div className="flex gap-2">
             <input
@@ -135,21 +132,21 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
             <Button type="button" variant="ghost" size="sm" onClick={addTag}>Add</Button>
           </div>
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div id="upload-tags-list" className="flex flex-wrap gap-1.5 mt-2">
               {tags.map((t) => <Tag key={t} label={t} onRemove={() => setTags((prev) => prev.filter((x) => x !== t))} />)}
             </div>
           )}
         </div>
 
         {progress > 0 && progress < 100 && (
-          <div className="h-1 bg-surface-3 rounded-full overflow-hidden">
-            <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+          <div id="upload-progress" className="h-1 bg-surface-3 rounded-full overflow-hidden">
+            <div id="upload-progress-bar" className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p id="upload-error" className="text-xs text-red-400">{error}</p>}
 
-        <div className="flex justify-end gap-2">
+        <div id="upload-actions" className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={!file || loading}>{loading ? 'Uploading…' : 'Upload version'}</Button>
         </div>

@@ -1,5 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Profiles (extends auth.users 1:1)
 CREATE TABLE public.profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -12,7 +10,7 @@ CREATE TABLE public.profiles (
 
 -- Projects (albums)
 CREATE TABLE public.projects (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name         TEXT NOT NULL,
   description  TEXT,
   cover_url    TEXT,
@@ -26,7 +24,7 @@ CREATE INDEX idx_projects_owner ON public.projects(owner_id);
 CREATE TYPE public.member_role AS ENUM ('owner', 'contributor', 'viewer');
 
 CREATE TABLE public.project_members (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id  UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
   user_id     UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   role        public.member_role NOT NULL DEFAULT 'viewer',
@@ -39,7 +37,7 @@ CREATE INDEX idx_project_members_user    ON public.project_members(user_id);
 
 -- Tracks (songs within a project)
 CREATE TABLE public.tracks (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id  UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
   title       TEXT NOT NULL,
   position    INTEGER NOT NULL DEFAULT 0,
@@ -52,7 +50,7 @@ CREATE INDEX idx_tracks_project ON public.tracks(project_id);
 
 -- Versions (each upload of a track)
 CREATE TABLE public.versions (
-  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   track_id       UUID NOT NULL REFERENCES public.tracks(id) ON DELETE CASCADE,
   version_number INTEGER NOT NULL,
   audio_key      TEXT NOT NULL,
@@ -70,7 +68,7 @@ CREATE INDEX idx_versions_track ON public.versions(track_id);
 
 -- Comments (on versions, threaded)
 CREATE TABLE public.comments (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   version_id   UUID NOT NULL REFERENCES public.versions(id) ON DELETE CASCADE,
   parent_id    UUID REFERENCES public.comments(id) ON DELETE CASCADE,
   author_id    UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -86,7 +84,7 @@ CREATE INDEX idx_comments_parent  ON public.comments(parent_id);
 CREATE TYPE public.task_status AS ENUM ('open', 'in_progress', 'done');
 
 CREATE TABLE public.tasks (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   version_id    UUID NOT NULL REFERENCES public.versions(id) ON DELETE CASCADE,
   project_id    UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
   title         TEXT NOT NULL,

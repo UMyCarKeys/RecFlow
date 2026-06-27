@@ -7,6 +7,7 @@ export function PlayerControls() {
 
   return (
     <div
+      id="player-controls"
       className="flex items-center gap-3 flex-shrink-0"
       onContextMenu={(e) => e.preventDefault()}
     >

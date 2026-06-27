@@ -20,7 +20,6 @@ export function ProjectPage() {
   const [addingTrack, setAddingTrack] = useState(false)
   const [newTrackTitle, setNewTrackTitle] = useState('')
 
-  // Gather latest version per track
   const latestVersions = useLatestVersionsForTracks(tracks)
 
   const handleAddTrack = async (e: React.FormEvent) => {
@@ -31,15 +30,14 @@ export function ProjectPage() {
     setAddingTrack(false)
   }
 
-  if (projLoading) return <div className="flex justify-center py-24"><Spinner /></div>
+  if (projLoading) return <div id="project-loading" className="flex justify-center py-24"><Spinner /></div>
   if (!project) return <p className="text-muted text-sm p-8">Project not found.</p>
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-white/8 flex-shrink-0">
+    <div id="project-page" className="h-full flex flex-col">
+      <div id="project-header" className="p-6 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div id="project-title">
             <h1 className="text-xl font-bold text-white">{project.name}</h1>
             {project.description && <p className="text-muted text-sm mt-1">{project.description}</p>}
           </div>
@@ -47,7 +45,7 @@ export function ProjectPage() {
         </div>
 
         {addingTrack && (
-          <form onSubmit={handleAddTrack} className="flex gap-2 mt-4">
+          <form id="project-add-track-form" onSubmit={handleAddTrack} className="flex gap-2 mt-4">
             <input
               value={newTrackTitle}
               onChange={(e) => setNewTrackTitle(e.target.value)}
@@ -61,12 +59,11 @@ export function ProjectPage() {
         )}
       </div>
 
-      {/* 3D disc grid */}
-      <div className="flex-1 relative">
+      <div id="project-disc-grid" className="flex-1 relative">
         {tracksLoading ? (
-          <div className="flex justify-center py-16"><Spinner /></div>
+          <div id="project-disc-loading" className="flex justify-center py-16"><Spinner /></div>
         ) : tracks.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
+          <motion.div id="project-disc-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
             <p className="text-muted text-sm">No tracks yet. Add one above.</p>
           </motion.div>
         ) : (
@@ -74,16 +71,19 @@ export function ProjectPage() {
             <DiscScene
               tracks={tracks}
               latestVersions={latestVersions}
-              onDiscClick={(_version: Version, track: Track) => navigate(`/project/${id}/track/${track.id}`)}
+              onDiscClick={(_version, track: Track) => navigate(`/project/${id}/track/${track.id}`)}
             />
           </Suspense>
         )}
 
-        {/* Track labels below disc grid */}
         {tracks.length > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 grid grid-cols-4 gap-4 pointer-events-none">
+          <div
+            id="project-track-labels"
+            className="absolute bottom-0 left-0 right-0 p-4 grid gap-4 pointer-events-none"
+            style={{ gridTemplateColumns: `repeat(${Math.min(tracks.length, 4)}, 1fr)` }}
+          >
             {tracks.map((track) => (
-              <div key={track.id} className="text-center">
+              <div key={track.id} id={`track-label-${track.id}`} className="text-center">
                 <p className="text-xs text-muted truncate">{track.title}</p>
               </div>
             ))}

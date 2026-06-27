@@ -8,8 +8,8 @@ export function PlayerBar() {
   if (!activeVersionId) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface-1/95 backdrop-blur-md border-t border-white/8 flex items-center px-4 gap-4 z-40">
-      <div className="flex-shrink-0 min-w-0">
+    <div id="player-bar" className="fixed bottom-0 left-0 right-0 h-16 bg-surface-1/95 backdrop-blur-md border-t border-white/8 flex items-center px-4 gap-4 z-40">
+      <div id="player-bar-track-info" className="flex-shrink-0 min-w-0">
         <p className="text-xs text-muted truncate max-w-36">Now playing</p>
         <p className="text-sm text-white font-medium truncate max-w-36">{activeTrackTitle}</p>
       </div>
@@ -18,6 +18,7 @@ export function PlayerBar() {
       <AudioPlayer />
 
       <button
+        id="player-bar-close"
         onClick={reset}
         className="flex-shrink-0 text-muted hover:text-white transition-colors"
         aria-label="Close player"

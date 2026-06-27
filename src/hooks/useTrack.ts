@@ -49,5 +49,16 @@ export function useTrack(trackId: string) {
       })
   }, [trackId])
 
-  return { track, loading }
+  const updateTrack = async (updates: Partial<Omit<Track, 'id' | 'project_id' | 'created_by' | 'created_at' | 'updated_at'>>) => {
+    const { data, error } = await supabase
+      .from('tracks')
+      .update(updates)
+      .eq('id', trackId)
+      .select()
+      .single()
+    if (!error && data) setTrack(data as Track)
+    return { data, error }
+  }
+
+  return { track, loading, updateTrack }
 }

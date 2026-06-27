@@ -21,14 +21,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div id="login-page" className="min-h-screen bg-surface flex items-center justify-center p-4">
+      <div id="login-container" className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-1 text-center">RecFlow</h1>
         <p className="text-muted text-sm text-center mb-8">Collaborative album versioning</p>
 
-        <div className="bg-surface-2 border border-white/8 rounded-2xl p-6 space-y-4">
+        <div id="login-card" className="bg-surface-2 border border-white/8 rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Sign in</h2>
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form id="login-form" onSubmit={handleSubmit} className="space-y-3">
             <input
               type="email"
               value={email}
@@ -45,7 +45,7 @@ export function LoginPage() {
               required
               className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
             />
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p id="login-error" className="text-xs text-red-400">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in…' : 'Sign in'}
             </Button>

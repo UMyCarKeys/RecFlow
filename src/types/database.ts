@@ -1,5 +1,6 @@
 export type MemberRole = 'owner' | 'contributor' | 'viewer'
 export type TaskStatus = 'open' | 'in_progress' | 'done'
+export type TrackStage = 'idea' | 'demo' | 'mix' | 'final_mix' | 'master'
 
 export interface Profile {
   id: string
@@ -37,6 +38,9 @@ export interface Track {
   created_by: string
   created_at: string
   updated_at: string
+  stage: TrackStage
+  notes: string | null
+  links: { url: string; label: string }[]
 }
 
 export interface Version {

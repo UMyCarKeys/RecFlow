@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
 
 export function TaskItem({ task, onStatusChange }: TaskItemProps) {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-surface-3 hover:bg-surface-3/80 transition-colors">
+    <div id={`task-${task.id}`} className="flex items-start gap-3 p-3 rounded-lg bg-surface-3 hover:bg-surface-3/80 transition-colors">
       <button
         onClick={() => onStatusChange(task.id, STATUS_CYCLE[task.status])}
         className={cn('flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-xs font-medium transition-colors', STATUS_COLOR[task.status])}

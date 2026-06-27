@@ -21,8 +21,8 @@ export function CommentItem({ comment, onReply }: CommentItemProps) {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-3">
+    <div id={`comment-${comment.id}`} className="space-y-2">
+      <div id={`comment-${comment.id}-header`} className="flex gap-3">
         <Avatar src={comment.profiles?.avatar_url} name={comment.profiles?.username} size="sm" />
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -59,7 +59,7 @@ export function CommentItem({ comment, onReply }: CommentItemProps) {
       )}
 
       {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-10 space-y-3 border-l border-white/8 pl-3">
+        <div id={`comment-${comment.id}-replies`} className="ml-10 space-y-3 border-l border-white/8 pl-3">
           {comment.replies.map((r) => (
             <CommentItem key={r.id} comment={r} onReply={onReply} />
           ))}

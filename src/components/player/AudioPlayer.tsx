@@ -60,6 +60,7 @@ export function AudioPlayer() {
 
   return (
     <div
+      id="audio-player-waveform"
       ref={containerRef}
       className="flex-1 mx-4"
       onContextMenu={(e) => e.preventDefault()}

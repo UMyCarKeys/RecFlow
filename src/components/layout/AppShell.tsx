@@ -5,9 +5,9 @@ import { Toast } from '@/components/ui/Toast'
 
 export function AppShell() {
   return (
-    <div className="flex h-screen bg-surface text-white overflow-hidden">
+    <div id="app-shell" className="flex h-screen bg-surface text-white overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto pb-16">
+      <main id="main-content" className="flex-1 overflow-y-auto pb-16">
         <Outlet />
       </main>
       <PlayerBar />

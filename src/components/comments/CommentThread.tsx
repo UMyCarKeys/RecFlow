@@ -11,15 +11,15 @@ export function CommentThread({ versionId }: CommentThreadProps) {
   const { comments, loading, addComment } = useComments(versionId)
 
   return (
-    <div className="space-y-4">
+    <div id={`comment-thread-${versionId}`} className="space-y-4">
       <h3 className="text-sm font-semibold text-white">Comments</h3>
 
       {loading ? (
-        <div className="flex justify-center py-4"><Spinner /></div>
+        <div id={`comment-thread-${versionId}-loading`} className="flex justify-center py-4"><Spinner /></div>
       ) : comments.length === 0 ? (
-        <p className="text-xs text-muted py-2">No comments yet. Be the first.</p>
+        <p id={`comment-thread-${versionId}-empty`} className="text-xs text-muted py-2">No comments yet. Be the first.</p>
       ) : (
-        <div className="space-y-4">
+        <div id={`comment-list-${versionId}`} className="space-y-4">
           {comments.map((c) => (
             <CommentItem key={c.id} comment={c} onReply={addComment} />
           ))}

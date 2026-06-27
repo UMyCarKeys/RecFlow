@@ -35,7 +35,7 @@ export function CreateProjectModal({ open, onClose, onCreated }: CreateProjectMo
 
   return (
     <Modal open={open} onClose={onClose} title="New Album Project">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="create-project-form" onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs text-muted mb-1">Project name</label>
           <input

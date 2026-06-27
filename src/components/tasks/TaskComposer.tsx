@@ -38,7 +38,7 @@ export function TaskComposer({ onSubmit, projectId, members }: TaskComposerProps
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 p-3 bg-surface-3 rounded-lg border border-white/8">
+    <form id="task-composer-form" onSubmit={handleSubmit} className="space-y-2 p-3 bg-surface-3 rounded-lg border border-white/8">
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -64,7 +64,7 @@ export function TaskComposer({ onSubmit, projectId, members }: TaskComposerProps
           <option key={m.user_id} value={m.user_id}>{m.profiles?.username ?? m.user_id}</option>
         ))}
       </select>
-      <div className="flex gap-2 justify-end">
+      <div id="task-composer-actions" className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
         <Button type="submit" size="sm" disabled={!title.trim() || loading}>
           {loading ? 'Adding…' : 'Add task'}

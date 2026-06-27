@@ -1,6 +1,7 @@
-import { Canvas } from '@react-three/fiber'
-import { Environment, OrbitControls } from '@react-three/drei'
-import { Suspense } from 'react'
+import { useRef, useEffect, Suspense } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Environment } from '@react-three/drei'
+import * as THREE from 'three'
 import { VinylDisc } from './VinylDisc'
 import { usePlayerStore } from '@/store/playerStore'
 import type { Version, Track } from '@/types/database'
@@ -8,25 +9,66 @@ import type { Version, Track } from '@/types/database'
 interface DiscSceneProps {
   tracks: Track[]
   latestVersions: Record<string, Version>
-  onDiscClick: (version: Version, track: Track) => void
+  onDiscClick: (version: Version | null, track: Track) => void
 }
 
-const COLS = 4
 const SPACING = 2.8
+const BASE_POS = new THREE.Vector3(0, 1.75, 5)
+const SENSITIVITY = 0.6
+
+function CameraRig() {
+  const { camera, gl } = useThree()
+  const mouseNorm = useRef({ x: 0, y: 0 })
+  const target = useRef(new THREE.Vector3().copy(BASE_POS))
+
+  useEffect(() => {
+    const canvas = gl.domElement
+
+    const onMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect()
+      mouseNorm.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      mouseNorm.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+    }
+
+    const onLeave = () => {
+      mouseNorm.current.x = 0
+      mouseNorm.current.y = 0
+    }
+
+    canvas.addEventListener('mousemove', onMove)
+    canvas.addEventListener('mouseleave', onLeave)
+    return () => {
+      canvas.removeEventListener('mousemove', onMove)
+      canvas.removeEventListener('mouseleave', onLeave)
+    }
+  }, [gl.domElement])
+
+  useFrame(() => {
+    target.current.set(
+      BASE_POS.x + mouseNorm.current.x * SENSITIVITY,
+      BASE_POS.y + mouseNorm.current.y * SENSITIVITY * 0.3,
+      BASE_POS.z,
+    )
+    camera.position.lerp(target.current, 0.05)
+    camera.lookAt(0, 0, 0)
+  })
+
+  return null
+}
 
 export function DiscScene({ tracks, latestVersions, onDiscClick }: DiscSceneProps) {
   const setActive = usePlayerStore((s) => s.setActive)
+  const COLS = Math.min(tracks.length, 4)
 
   const handleClick = (track: Track) => {
-    const version = latestVersions[track.id]
-    if (!version) return
-    setActive(version.id, track.title)
+    const version = latestVersions[track.id] ?? null
+    if (version) setActive(version.id, track.title)
     onDiscClick(version, track)
   }
 
   return (
     <Canvas
-      camera={{ fov: 45, position: [0, 3.5, 10] }}
+      camera={{ fov: 45, position: [0, 1.75, 5] }}
       className="w-full h-full"
       gl={{ antialias: true }}
     >
@@ -55,12 +97,7 @@ export function DiscScene({ tracks, latestVersions, onDiscClick }: DiscSceneProp
         })}
       </Suspense>
 
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        maxPolarAngle={Math.PI / 2.2}
-        minPolarAngle={Math.PI / 4}
-      />
+      <CameraRig />
     </Canvas>
   )
 }
