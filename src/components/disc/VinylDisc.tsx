@@ -1,7 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import type { Mesh } from 'three'
 import { usePlayerStore } from '@/store/playerStore'
 
 interface VinylDiscProps {
@@ -22,83 +21,97 @@ function makeGrooveNormalMap(): THREE.CanvasTexture {
   const cx = size / 2
   const cy = size / 2
 
-  // Neutral flat normal base (#8080ff = no deflection)
+  // Neutral base — (128, 128, 255) means "no deflection from surface normal"
   ctx.fillStyle = '#8080ff'
   ctx.fillRect(0, 0, size, size)
 
-  // Alternating groove ridges and valleys with high enough contrast that
-  // the normalScale can actually bend light between them. Low alpha here
-  // produced near-invisible grooves under moderate normalScale values.
-  for (let r = 38; r < size / 2 - 8; r += 3) {
+  // Alternating ridge / valley rings starting close to center so the entire
+  // playing surface has groove detail, not just the outer edge.
+  // Higher alpha (0.5) and genuine contrast between ridge and valley values
+  // are what actually bend the reflected light between grooves.
+  for (let r = 18; r < size / 2 - 4; r += 3) {
     const isRidge = (r % 6) < 3
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    // Ridge normals lean toward viewer (brighter blue channel)
-    // Valley normals lean away (darker, purple-shifted)
     ctx.strokeStyle = isRidge
-      ? 'rgba(168, 168, 255, 0.45)'
-      : 'rgba(52,  52,  195, 0.45)'
+      ? 'rgba(172, 172, 255, 0.5)'   // ridge: normal leans toward viewer
+      : 'rgba(44,  44,  188, 0.5)'   // valley: normal leans away
     ctx.lineWidth = 1.5
     ctx.stroke()
   }
 
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  return tex
+  return new THREE.CanvasTexture(canvas)
 }
 
 export function VinylDisc({ versionId, position, onClick }: VinylDiscProps) {
-  const meshRef = useRef<Mesh>(null)
+  const spinRef = useRef<THREE.Group>(null)
   const { activeVersionId, isPlaying } = usePlayerStore()
   const isActive = activeVersionId === versionId
-
   const normalMap = useMemo(() => makeGrooveNormalMap(), [])
 
   useFrame((_, delta) => {
-    if (!meshRef.current) return
+    if (!spinRef.current) return
     if (isActive && isPlaying) {
-      meshRef.current.rotation.y += RPM_RAD_PER_SEC * delta
+      // Rotate around Z — the disc's normal axis — so it spins flat like a record
+      spinRef.current.rotation.z += RPM_RAD_PER_SEC * delta
     }
   })
 
   return (
     <group position={position} onClick={onClick}>
-      {/* Main vinyl body — high metalness + high envMapIntensity means the
-          surface acts like a mirror for the scene's colored lights; increasing
-          normalScale makes the groove ridges visibly deflect that reflection */}
-      <mesh ref={meshRef} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[1, 1, 0.04, 128]} />
-        <meshStandardMaterial
-          color="#0a080f"
-          metalness={0.95}
-          roughness={0.03}
-          normalMap={normalMap}
-          normalScale={new THREE.Vector2(1.4, 1.4)}
-          envMapIntensity={5.0}
-        />
-      </mesh>
 
-      {/* Center label disc */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.021, 0]}>
-        <cylinderGeometry args={[0.28, 0.28, 0.001, 64]} />
-        <meshStandardMaterial
-          color={isActive ? '#7c6af0' : '#1c1c21'}
-          roughness={0.35}
-          metalness={0.15}
-          envMapIntensity={1.0}
-        />
-      </mesh>
+      {/* All disc geometry lives in this spinning group */}
+      <group ref={spinRef}>
 
-      {/* Spindle hole */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.025, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 0.06, 32]} />
-        <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
-      </mesh>
+        {/* Front playing surface — CircleGeometry gives correct flat UV layout
+            and proper tangent vectors so the normal map actually deflects
+            reflections across the full face, not just the outer rim */}
+        <mesh position={[0, 0, 0.02]}>
+          <circleGeometry args={[1, 128]} />
+          <meshStandardMaterial
+            color="#0a080f"
+            metalness={0.95}
+            roughness={0.03}
+            normalMap={normalMap}
+            normalScale={new THREE.Vector2(1.4, 1.4)}
+            envMapIntensity={5.0}
+          />
+        </mesh>
 
-      {/* Active glow ring */}
+        {/* Back face */}
+        <mesh rotation={[0, Math.PI, 0]} position={[0, 0, -0.02]}>
+          <circleGeometry args={[1, 64]} />
+          <meshStandardMaterial color="#0a080f" metalness={0.85} roughness={0.08} />
+        </mesh>
+
+        {/* Thin edge rim connecting the two faces */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[1, 1, 0.04, 128, 1, true]} />
+          <meshStandardMaterial color="#0a080f" metalness={0.95} roughness={0.04} envMapIntensity={3.0} />
+        </mesh>
+
+        {/* Center label */}
+        <mesh position={[0, 0, 0.022]}>
+          <circleGeometry args={[0.28, 64]} />
+          <meshStandardMaterial
+            color={isActive ? '#7c6af0' : '#1c1c21'}
+            roughness={0.35}
+            metalness={0.15}
+            envMapIntensity={1.0}
+          />
+        </mesh>
+
+        {/* Spindle hole */}
+        <mesh position={[0, 0, 0.023]}>
+          <circleGeometry args={[0.04, 32]} />
+          <meshStandardMaterial color="#000000" roughness={1} metalness={0} />
+        </mesh>
+
+      </group>
+
+      {/* Glow ring sits outside the spinning group so it stays still */}
       {isActive && (
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
+        <mesh position={[0, 0, 0.025]}>
           <ringGeometry args={[1.01, 1.06, 128]} />
           <meshStandardMaterial
             color="#7c6af0"
@@ -106,9 +119,11 @@ export function VinylDisc({ versionId, position, onClick }: VinylDiscProps) {
             emissiveIntensity={1.2}
             transparent
             opacity={0.7}
+            side={THREE.DoubleSide}
           />
         </mesh>
       )}
+
     </group>
   )
 }
