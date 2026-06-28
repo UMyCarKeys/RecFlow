@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import { VinylDisc } from './VinylDisc'
-import { usePlayerStore } from '@/store/playerStore'
 import type { Version, Track } from '@/types/database'
 
 interface DiscSceneProps {
@@ -57,19 +56,10 @@ function CameraRig() {
 }
 
 export function DiscScene({ tracks, latestVersions, onDiscClick }: DiscSceneProps) {
-  const { setActive, activeVersionId, isPlaying, setIsPlaying } = usePlayerStore()
   const COLS = Math.min(tracks.length, 4)
 
   const handleClick = (track: Track) => {
     const version = latestVersions[track.id] ?? null
-    if (version) {
-      if (activeVersionId === version.id) {
-        // Same disc clicked again — toggle play/pause rather than reloading
-        setIsPlaying(!isPlaying)
-        return
-      }
-      setActive(version.id, track.title)
-    }
     onDiscClick(version, track)
   }
 

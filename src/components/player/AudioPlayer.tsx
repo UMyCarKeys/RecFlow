@@ -6,7 +6,7 @@ import { fetchAudioBlob } from '@/lib/r2'
 export function AudioPlayer() {
   const wavesurferRef = useRef<WaveSurfer | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { activeVersionId, blobUrl, isPlaying, setBlobUrl, setIsPlaying, setProgress, setDuration } = usePlayerStore()
+  const { activeVersionId, blobUrl, isPlaying, setBlobUrl, setIsPlaying, setProgress, setDuration, setLoading } = usePlayerStore()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -47,7 +47,12 @@ export function AudioPlayer() {
   // Fetch blob when active version changes
   useEffect(() => {
     if (!activeVersionId) return
-    fetchAudioBlob(activeVersionId).then(setBlobUrl).catch(console.error)
+    fetchAudioBlob(activeVersionId)
+      .then(setBlobUrl)
+      .catch((err) => {
+        console.error('[AudioPlayer] fetch failed:', err)
+        setLoading(false)
+      })
   }, [activeVersionId, setBlobUrl])
 
   // Sync external play/pause commands
