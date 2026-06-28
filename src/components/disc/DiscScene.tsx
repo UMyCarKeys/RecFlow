@@ -57,12 +57,19 @@ function CameraRig() {
 }
 
 export function DiscScene({ tracks, latestVersions, onDiscClick }: DiscSceneProps) {
-  const setActive = usePlayerStore((s) => s.setActive)
+  const { setActive, activeVersionId, isPlaying, setIsPlaying } = usePlayerStore()
   const COLS = Math.min(tracks.length, 4)
 
   const handleClick = (track: Track) => {
     const version = latestVersions[track.id] ?? null
-    if (version) setActive(version.id, track.title)
+    if (version) {
+      if (activeVersionId === version.id) {
+        // Same disc clicked again — toggle play/pause rather than reloading
+        setIsPlaying(!isPlaying)
+        return
+      }
+      setActive(version.id, track.title)
+    }
     onDiscClick(version, track)
   }
 
