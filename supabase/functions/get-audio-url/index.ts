@@ -6,8 +6,9 @@ const TTL_SECONDS = 900
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin') ?? ''
   const siteUrl = Deno.env.get('SITE_URL') ?? ''
+  const isAllowed = origin === siteUrl || origin.startsWith('http://localhost')
   const corsHeaders = {
-    'Access-Control-Allow-Origin': origin === siteUrl ? origin : '',
+    'Access-Control-Allow-Origin': isAllowed ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
 

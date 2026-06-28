@@ -14,7 +14,7 @@ interface DiscSceneProps {
 
 const SPACING = 2.8
 const BASE_POS = new THREE.Vector3(0, 1.75, 5)
-const SENSITIVITY = 0.6
+const SENSITIVITY = 1.4
 
 function CameraRig() {
   const { camera, gl } = useThree()
@@ -46,7 +46,7 @@ function CameraRig() {
   useFrame(() => {
     target.current.set(
       BASE_POS.x + mouseNorm.current.x * SENSITIVITY,
-      BASE_POS.y + mouseNorm.current.y * SENSITIVITY * 0.3,
+      BASE_POS.y + mouseNorm.current.y * SENSITIVITY * 0.35,
       BASE_POS.z,
     )
     camera.position.lerp(target.current, 0.05)
@@ -70,14 +70,25 @@ export function DiscScene({ tracks, latestVersions, onDiscClick }: DiscSceneProp
     <Canvas
       camera={{ fov: 45, position: [0, 1.75, 5] }}
       className="w-full h-full"
-      gl={{ antialias: true }}
+      gl={{
+        antialias: true,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.4,
+      }}
     >
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[5, 8, 5]} intensity={0.6} castShadow />
-      <pointLight position={[-4, 3, 2]} intensity={0.4} color="#7c6af0" />
+      <ambientLight intensity={0.08} />
+      <directionalLight position={[5, 8, 5]} intensity={0.8} />
+
+      {/* Colored fill lights at different positions so the metallic surface
+          has varied hues to reflect as the camera tilts with the mouse */}
+      <pointLight position={[-4, 3, 2]}  intensity={1.2} color="#7c6af0" /> {/* purple left */}
+      <pointLight position={[4, -1, 3]}  intensity={0.8} color="#ff6030" /> {/* warm orange right-low */}
+      <pointLight position={[-2, 4, -2]} intensity={0.6} color="#40b0ff" /> {/* cool blue top-back */}
+      <pointLight position={[3, 2, -3]}  intensity={0.5} color="#c040f0" /> {/* magenta back */}
 
       <Suspense fallback={null}>
-        <Environment preset="studio" />
+        {/* sunset gives the richest chromatic variation for metallic reflections */}
+        <Environment preset="sunset" />
 
         {tracks.map((track, i) => {
           const col = i % COLS
