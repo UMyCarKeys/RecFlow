@@ -17,7 +17,7 @@ export function IdeaBoard({ notes, links, onNotesChange, onLinksChange }: IdeaBo
   const [localNotes, setLocalNotes] = useState(notes ?? '')
   const [newUrl, setNewUrl] = useState('')
   const [newLabel, setNewLabel] = useState('')
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const handleNotesChange = (value: string) => {
     setLocalNotes(value)
