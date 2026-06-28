@@ -105,7 +105,7 @@ function useLatestVersionsForTracks(tracks: Track[]): Record<string, Version> {
       .eq('track_id', track.id)
       .order('version_number', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (data) setVersions((prev) => ({ ...prev, [track.id]: data as Version }))
       })
