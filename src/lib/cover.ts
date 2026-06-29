@@ -1,6 +1,8 @@
 /**
  * Deterministic generative artwork for a project's vinyl-sleeve cover.
- * Same project id always yields the same washed, grainy color/shape composition.
+ * Same project id always yields the same composition: smooth washed gradient
+ * blobs (no hard edges) plus a few randomized technical "print marks" in the
+ * corners, in the spirit of a screen-printed record sleeve.
  */
 
 function hashStr(s: string): number {
@@ -25,25 +27,46 @@ function mulberry32(a: number) {
 // Warm Spectrum hues
 const HUES = ['#ff8a6b', '#ffc46b', '#ff6b9d', '#b88cff', '#ff9e7d', '#ffd27d', '#f07a8f']
 
-export type ShapeKind = 'circle' | 'tri' | 'bar'
+export type MarkId =
+  | 'barcode'
+  | 'ce'
+  | 'reg'
+  | 'hazard'
+  | 'globe'
+  | 'colorbars'
+  | 'stereo'
+  | 'code'
+  | 'seihin'
 
-export interface CoverShape {
-  kind: ShapeKind
-  x: number // %
-  y: number // %
-  size: number // px-ish (% of card)
-  rot: number // deg
+export type Corner = 'tl' | 'tr' | 'bl' | 'br'
+
+export interface CoverMark {
+  id: MarkId
+  corner: Corner
+  rot: number
+  scale: number
+}
+
+export interface CoverBlob {
   color: string
-  opacity: number
+  x: number
+  y: number
+  spread: number
+  alpha: string
 }
 
 export interface CoverSpec {
-  // three washed gradient blobs
-  blobs: { color: string; x: number; y: number; spread: number; alpha: string }[]
-  shapes: CoverShape[]
-  discOffsetX: number // how far the record peeks from behind the sleeve (%)
-  discTilt: number // deg
+  blobs: CoverBlob[]
+  sweep: string // a soft diagonal gradient sweep color
+  sweepAngle: number
+  marks: CoverMark[]
+  code: string
+  discTilt: number
 }
+
+const ALL_MARKS: MarkId[] = ['barcode', 'ce', 'reg', 'hazard', 'globe', 'colorbars', 'stereo', 'code', 'seihin']
+const CORNERS: Corner[] = ['tl', 'tr', 'bl', 'br']
+const CODE_LETTERS = 'ABCDEFGHJKLMNPRSTUVXZ'
 
 export function coverSpec(id: string): CoverSpec {
   const rnd = mulberry32(hashStr(id))
@@ -53,28 +76,47 @@ export function coverSpec(id: string): CoverSpec {
       .toString(16)
       .padStart(2, '0')
 
-  const blobs = [
-    { color: pick(), x: Math.round(rnd() * 100), y: Math.round(rnd() * 100), spread: 50 + Math.round(rnd() * 15), alpha: alphaHex(0.85) },
-    { color: pick(), x: Math.round(rnd() * 100), y: Math.round(rnd() * 100), spread: 55 + Math.round(rnd() * 15), alpha: alphaHex(0.7) },
-    { color: pick(), x: Math.round(rnd() * 100), y: Math.round(rnd() * 100), spread: 60 + Math.round(rnd() * 15), alpha: alphaHex(0.6) },
-  ]
-
-  const shapeCount = 3 + Math.floor(rnd() * 3)
-  const kinds: ShapeKind[] = ['circle', 'tri', 'bar']
-  const shapes: CoverShape[] = Array.from({ length: shapeCount }, () => ({
-    kind: kinds[Math.floor(rnd() * kinds.length)],
+  // Smooth, feathered gradient blobs (no hard edges)
+  const blobs: CoverBlob[] = Array.from({ length: 5 }, (_, i) => ({
+    color: pick(),
     x: Math.round(rnd() * 100),
     y: Math.round(rnd() * 100),
-    size: 22 + Math.round(rnd() * 40),
-    rot: Math.round(rnd() * 360),
-    color: pick(),
-    opacity: 0.12 + rnd() * 0.18,
+    spread: 48 + Math.round(rnd() * 22),
+    alpha: alphaHex(0.85 - i * 0.1),
+  }))
+
+  // Seeded catalog code, e.g. "LR-05592"
+  const code =
+    CODE_LETTERS[Math.floor(rnd() * CODE_LETTERS.length)] +
+    CODE_LETTERS[Math.floor(rnd() * CODE_LETTERS.length)] +
+    '-' +
+    String(10000 + Math.floor(rnd() * 89999))
+
+  // 2..4 distinct marks in distinct corners
+  const marksShuffled = [...ALL_MARKS]
+  const cornersShuffled = [...CORNERS]
+  for (let i = marksShuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1))
+    ;[marksShuffled[i], marksShuffled[j]] = [marksShuffled[j], marksShuffled[i]]
+  }
+  for (let i = cornersShuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1))
+    ;[cornersShuffled[i], cornersShuffled[j]] = [cornersShuffled[j], cornersShuffled[i]]
+  }
+  const count = 2 + Math.floor(rnd() * 3)
+  const marks: CoverMark[] = Array.from({ length: count }, (_, i) => ({
+    id: marksShuffled[i],
+    corner: cornersShuffled[i % cornersShuffled.length],
+    rot: Math.round(rnd() * 16 - 8),
+    scale: 0.85 + rnd() * 0.3,
   }))
 
   return {
     blobs,
-    shapes,
-    discOffsetX: 56 + Math.round(rnd() * 22),
+    sweep: pick(),
+    sweepAngle: Math.round(rnd() * 360),
+    marks,
+    code,
     discTilt: Math.round(rnd() * 30 - 15),
   }
 }

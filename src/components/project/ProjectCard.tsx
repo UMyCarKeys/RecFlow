@@ -2,11 +2,19 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { coverSpec } from '@/lib/cover'
+import type { Corner, MarkId } from '@/lib/cover'
 import type { Project } from '@/types/database'
 
 interface ProjectCardProps {
   project: Project
   progress?: number // 0..1
+}
+
+const CORNER_POS: Record<Corner, string> = {
+  tl: 'top-2.5 left-2.5',
+  tr: 'top-2.5 right-2.5',
+  bl: 'bottom-9 left-2.5',
+  br: 'bottom-9 right-2.5',
 }
 
 export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
@@ -15,7 +23,10 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
 
   const blobBg = spec.blobs
     .map((b) => `radial-gradient(circle at ${b.x}% ${b.y}%, ${b.color}${b.alpha} 0%, ${b.color}00 ${b.spread}%)`)
-    .concat(['linear-gradient(135deg, #241f2b, #1a1620)'])
+    .concat([
+      `linear-gradient(${spec.sweepAngle}deg, ${spec.sweep}33 0%, transparent 60%)`,
+      'linear-gradient(135deg, #241f2b, #1a1620)',
+    ])
     .join(', ')
 
   return (
@@ -25,18 +36,17 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
       transition={{ type: 'spring', stiffness: 300, damping: 26 }}
     >
       <Link to={`/project/${project.id}`} className="block group/card">
-        {/* Sleeve + peeking record */}
         <div className="relative">
-          {/* Record peeking from behind the sleeve, slides further on hover */}
+          {/* Record peeking from behind the sleeve, slides out on hover */}
           <div
             id={`project-${project.id}-disc`}
-            className="absolute left-1/2 -top-3 w-[62%] aspect-square -translate-x-1/2 transition-transform duration-500 ease-out group-hover/card:-translate-y-2"
+            className="absolute left-1/2 -top-3 w-[60%] aspect-square transition-transform duration-500 ease-out group-hover/card:-translate-y-2.5"
             style={{ transform: `translateX(-50%) rotate(${spec.discTilt}deg)` }}
           >
             <VinylMark />
           </div>
 
-          {/* Sleeve face (square) */}
+          {/* Sleeve face (square, matte printed) */}
           <div
             id={`project-${project.id}-cover`}
             className="relative aspect-square rounded-xl overflow-hidden border border-white/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
@@ -45,101 +55,131 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               <img src={project.cover_url} alt={project.name} className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <>
-                {/* Washed generative gradient blobs */}
+                {/* Smooth washed gradient field */}
                 <div className="absolute inset-0" style={{ backgroundImage: blobBg }} />
 
-                {/* Generative shapes (washed + soft) */}
-                {spec.shapes.map((s, i) => (
-                  <GenShape key={i} shape={s} />
-                ))}
+                {/* Frosted wash to keep colors muted / printed */}
+                <div className="absolute inset-0 bg-surface/25" />
 
-                {/* Frosted wash to keep colors muted/washed */}
-                <div className="absolute inset-0 bg-surface/30" />
-
-                {/* Grain texture */}
+                {/* Printed paper grain */}
                 <div
-                  className="absolute inset-0 mix-blend-soft-light opacity-20"
+                  className="absolute inset-0 mix-blend-soft-light opacity-25"
                   style={{
                     backgroundImage:
-                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
                     backgroundSize: '160px 160px',
                   }}
                 />
 
-                {/* Center record symbol so it always reads as a record sleeve */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-[0.22]">
-                  <VinylMark />
-                </div>
+                {/* Randomized technical print marks in the corners */}
+                {spec.marks.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`absolute ${CORNER_POS[m.corner]} text-ink/55`}
+                    style={{ transform: `rotate(${m.rot}deg) scale(${m.scale})` }}
+                  >
+                    <MarkGlyph id={m.id} code={spec.code} />
+                  </div>
+                ))}
               </>
             )}
 
-            {/* Record-square glyph badge (corner) */}
-            <div className="absolute top-2.5 left-2.5 w-5 h-5 rounded-[5px] border border-white/30 flex items-center justify-center backdrop-blur-sm bg-black/15">
-              <span className="w-2 h-2 rounded-full border border-white/50" />
-            </div>
-
-            {/* Progress ring badge (corner) */}
-            <div className="absolute top-2.5 right-2.5 text-[10px] font-medium text-white/85 px-1.5 py-0.5 rounded-full bg-black/25 backdrop-blur-sm">
-              {pct}%
+            {/* Progress — contained within the cover square */}
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2">
+              <div className="flex-1 h-1 rounded-full bg-black/35 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-spectrum-warm transition-[width] duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-medium text-white/90 tabular-nums">{pct}%</span>
             </div>
           </div>
         </div>
 
-        {/* Title + progress bar */}
+        {/* Title */}
         <div id={`project-${project.id}-info`} className="px-1 pt-3">
           <h3 className="font-medium text-white text-sm truncate">{project.name}</h3>
           {project.description && (
             <p className="text-xs text-muted mt-0.5 line-clamp-1 font-light">{project.description}</p>
           )}
-          <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full rounded-full bg-spectrum-warm transition-[width] duration-500" style={{ width: `${pct}%` }} />
-          </div>
         </div>
       </Link>
     </motion.div>
   )
 }
 
-function GenShape({ shape }: { shape: import('@/lib/cover').CoverShape }) {
-  const base = 'absolute blur-[2px] mix-blend-screen'
-  const style: React.CSSProperties = {
-    left: `${shape.x}%`,
-    top: `${shape.y}%`,
-    width: `${shape.size}%`,
-    opacity: shape.opacity,
-    transform: `translate(-50%, -50%) rotate(${shape.rot}deg)`,
+/* ---- Technical print marks (screen-printed record-sleeve aesthetic) ---- */
+
+function MarkGlyph({ id, code }: { id: MarkId; code: string }) {
+  switch (id) {
+    case 'barcode':
+      return (
+        <svg viewBox="0 0 44 16" className="w-11 h-4" fill="currentColor">
+          {[0, 2, 3, 6, 8, 9, 12, 15, 16, 19, 21, 24, 26, 27, 30, 33, 35, 38, 40, 43].map((x, i) => (
+            <rect key={i} x={x} y="0" width={i % 3 === 0 ? 1.4 : 0.7} height="16" />
+          ))}
+        </svg>
+      )
+    case 'ce':
+      return <span className="text-[11px] font-extrabold tracking-tighter">CE</span>
+    case 'reg':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="8" cy="8" r="4" />
+          <path d="M8 0v16M0 8h16" />
+        </svg>
+      )
+    case 'hazard':
+      return (
+        <svg viewBox="0 0 18 16" className="w-[18px] h-4" fill="none" stroke="currentColor" strokeWidth="1.1">
+          <path d="M9 1.5 L16.5 14.5 H1.5 Z" strokeLinejoin="round" />
+          <path d="M9 6v4" strokeLinecap="round" />
+          <circle cx="9" cy="12" r="0.4" fill="currentColor" />
+        </svg>
+      )
+    case 'globe':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="0.8">
+          <circle cx="8" cy="8" r="7" />
+          <ellipse cx="8" cy="8" rx="3" ry="7" />
+          <path d="M1 8h14M2.5 4h11M2.5 12h11" />
+        </svg>
+      )
+    case 'colorbars':
+      return (
+        <div className="flex gap-[2px]">
+          {['#ff8a6b', '#ffc46b', '#6fd6c4', '#b88cff', '#f4ece8'].map((c) => (
+            <span key={c} className="w-[3px] h-3.5 rounded-[1px]" style={{ background: c }} />
+          ))}
+        </div>
+      )
+    case 'stereo':
+      return <span className="text-[8px] font-extrabold tracking-[0.22em]">STEREO</span>
+    case 'seihin':
+      return <span className="text-[11px] font-semibold leading-none">製品</span>
+    case 'code':
+    default:
+      return <span className="font-mono text-[8px] tracking-wide">{code}</span>
   }
-  if (shape.kind === 'circle') {
-    return <div className={`${base} rounded-full aspect-square`} style={{ ...style, background: shape.color }} />
-  }
-  if (shape.kind === 'bar') {
-    return <div className={base} style={{ ...style, height: `${shape.size * 0.18}%`, background: shape.color, borderRadius: 999 }} />
-  }
-  // triangle
-  return (
-    <div
-      className={base}
-      style={{ ...style, aspectRatio: '1', background: shape.color, clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
-    />
-  )
 }
 
-/** A faded vinyl record graphic — grooves, label, spindle hole. */
+/** A faded vinyl record graphic — used only for the record peeking from the sleeve. */
 function VinylMark() {
   return (
     <svg viewBox="0 0 100 100" className="w-full h-full">
       <defs>
-        <radialGradient id="vinylSheen" cx="38%" cy="34%" r="70%">
-          <stop offset="0%" stopColor="#3a3340" />
-          <stop offset="55%" stopColor="#15121a" />
+        <radialGradient id="vinylBody" cx="42%" cy="40%" r="68%">
+          <stop offset="0%" stopColor="#2a2430" />
+          <stop offset="60%" stopColor="#15121a" />
           <stop offset="100%" stopColor="#0a080f" />
         </radialGradient>
       </defs>
-      <circle cx="50" cy="50" r="49" fill="url(#vinylSheen)" />
+      <circle cx="50" cy="50" r="49" fill="url(#vinylBody)" />
       {[44, 39, 34, 29, 24].map((r) => (
-        <circle key={r} cx="50" cy="50" r={r} fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="0.6" />
+        <circle key={r} cx="50" cy="50" r={r} fill="none" stroke="#ffffff" strokeOpacity="0.05" strokeWidth="0.6" />
       ))}
-      <circle cx="50" cy="50" r="14" fill="#ff8a6b" fillOpacity="0.85" />
+      <circle cx="50" cy="50" r="14" fill="#ff8a6b" fillOpacity="0.8" />
       <circle cx="50" cy="50" r="2.2" fill="#0a080f" />
     </svg>
   )
