@@ -47,7 +47,11 @@ export function TopBar() {
 
   return (
     <header id="top-bar" className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-20">
-      <div className="absolute inset-0 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" />
+      {/* Idle: a top-anchored tint that dissolves to transparent toward the page center */}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-1/60 via-surface-1/25 to-transparent transition-opacity duration-300 group-hover/topbar:opacity-0" />
+
+      {/* Hover: a full glass panel with a crisp edge */}
+      <div className="absolute inset-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" />
 
       {/* Breadcrumb / context */}
       <div className="relative flex items-center gap-2.5 text-sm">
