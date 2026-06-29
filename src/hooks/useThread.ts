@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Comment, Task } from '@/types/database'
 
@@ -12,44 +12,55 @@ const COMMENT_SELECT = '*, profiles(*)'
 const TASK_SELECT = '*, assignee:profiles!tasks_assignee_id_fkey(*)'
 
 /**
- * Unified comment + task thread for a version. Comments are the stream; a
- * comment can optionally carry a task (assignee + done state). Tasks live in
- * their own table but are anchored to a comment via comment_id and inherit the
- * comment's timestamp.
+ * Unified comment + task thread for a version, kept live for everyone: any
+ * comment/task change (from any collaborator) refetches the thread via realtime.
+ * A comment can optionally carry a task (assignee + done state), anchored to the
+ * comment via comment_id and inheriting its timestamp.
  */
 export function useThread(versionId: string, projectId: string) {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!versionId) return
-    let cancelled = false
-    Promise.all([
+    const [{ data: cData }, { data: tData }] = await Promise.all([
       supabase.from('comments').select(COMMENT_SELECT).eq('version_id', versionId).order('created_at'),
       supabase.from('tasks').select(TASK_SELECT).eq('version_id', versionId),
-    ]).then(([{ data: cData }, { data: tData }]) => {
-      if (cancelled) return
-      const taskByComment = new Map<string, Task>()
-      for (const t of (tData as Task[]) ?? []) if (t.comment_id) taskByComment.set(t.comment_id, t)
+    ])
+    const taskByComment = new Map<string, Task>()
+    for (const t of (tData as Task[]) ?? []) if (t.comment_id) taskByComment.set(t.comment_id, t)
 
-      const nodes: Comment[] = ((cData as Comment[]) ?? []).map((c) => ({
-        ...c,
-        task: taskByComment.get(c.id) ?? null,
-        replies: [],
-      }))
-      const byId = new Map(nodes.map((c) => [c.id, c]))
-      const roots: Comment[] = []
-      for (const c of nodes) {
-        if (c.parent_id && byId.has(c.parent_id)) byId.get(c.parent_id)!.replies!.push(c)
-        else roots.push(c)
-      }
-      setComments(roots)
-      setLoading(false)
-    })
-    return () => {
-      cancelled = true
+    const nodes: Comment[] = ((cData as Comment[]) ?? []).map((c) => ({
+      ...c,
+      task: taskByComment.get(c.id) ?? null,
+      replies: [],
+    }))
+    const byId = new Map(nodes.map((c) => [c.id, c]))
+    const roots: Comment[] = []
+    for (const c of nodes) {
+      if (c.parent_id && byId.has(c.parent_id)) byId.get(c.parent_id)!.replies!.push(c)
+      else roots.push(c)
     }
+    setComments(roots)
+    setLoading(false)
   }, [versionId])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // Live: refetch when any collaborator changes comments/tasks for this version
+  useEffect(() => {
+    if (!versionId) return
+    const channel = supabase
+      .channel(`thread:${versionId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `version_id=eq.${versionId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `version_id=eq.${versionId}` }, () => load())
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [versionId, load])
 
   const addComment = async (body: string, authorId: string, opts: AddOpts = {}) => {
     const { data: cData, error } = await supabase

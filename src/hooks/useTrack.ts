@@ -49,6 +49,22 @@ export function useTrack(trackId: string) {
       })
   }, [trackId])
 
+  // Live: reflect ideas/stage/title/archive changes from any collaborator
+  useEffect(() => {
+    if (!trackId) return
+    const channel = supabase
+      .channel(`track:${trackId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tracks', filter: `id=eq.${trackId}` },
+        (payload) => setTrack(payload.new as Track),
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [trackId])
+
   const updateTrack = async (updates: Partial<Omit<Track, 'id' | 'project_id' | 'created_by' | 'created_at' | 'updated_at'>>) => {
     const { data, error } = await supabase
       .from('tracks')
