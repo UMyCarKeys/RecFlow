@@ -1,11 +1,17 @@
 import { NavLink } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { useChromeStore } from '@/store/chromeStore'
 
 export function Sidebar() {
+  const { railHover, barHover, setRailHover } = useChromeStore()
+  const chromeHover = railHover || barHover
+
   return (
     <aside
       id="sidebar"
-      className="group/sidebar relative z-20 h-full w-[68px] hover:w-56 transition-[width] duration-300 ease-out flex-shrink-0"
+      onMouseEnter={() => setRailHover(true)}
+      onMouseLeave={() => setRailHover(false)}
+      className="group/sidebar relative z-40 h-full w-[68px] hover:w-56 transition-[width] duration-300 ease-out flex-shrink-0"
     >
       {/* Idle: fully transparent. On hover: a full glass panel with a crisp edge */}
       <div className="absolute inset-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 glass border-r border-white/[0.08] shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]" />
@@ -14,7 +20,13 @@ export function Sidebar() {
         {/* Logo */}
         <div id="sidebar-logo" className="h-14 flex items-center flex-shrink-0">
           <div className="w-[68px] flex justify-center flex-shrink-0">
-            <div className="w-7 h-7 rounded-full bg-spectrum shadow-[0_0_20px_rgba(255,138,107,0.45)]" />
+            <div
+              className={`w-7 h-7 rounded-full bg-spectrum transition-all duration-300 ${
+                chromeHover
+                  ? 'scale-110 brightness-125 shadow-[0_0_32px_rgba(255,138,107,0.9)]'
+                  : 'shadow-[0_0_18px_rgba(255,138,107,0.4)]'
+              }`}
+            />
           </div>
           <span className="font-semibold tracking-tight text-lg whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
             RecFlow

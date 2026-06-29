@@ -241,7 +241,7 @@ export function DepthBackground() {
           left: '-7vw',
           top: '-7vh',
           zIndex: 0,
-          filter: 'blur(54px) saturate(1.12) brightness(0.8)',
+          filter: 'blur(54px) saturate(1.14) brightness(0.9)',
         }}
       />
       {/* Crisp frosted grain texture on top of the blurred color glow */}

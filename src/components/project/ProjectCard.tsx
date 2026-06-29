@@ -60,11 +60,11 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               <img src={project.cover_url} alt={project.name} className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <>
-                {/* Smooth washed gradient field */}
-                <div className="absolute inset-0" style={{ backgroundImage: blobBg }} />
+                {/* Smooth washed gradient field (slightly brighter + more vivid) */}
+                <div className="absolute inset-0" style={{ backgroundImage: blobBg, filter: 'brightness(1.12) saturate(1.12)' }} />
 
-                {/* Frosted wash to keep colors muted / printed */}
-                <div className="absolute inset-0 bg-surface/25" />
+                {/* Light frosted wash to keep it printed without dulling too much */}
+                <div className="absolute inset-0 bg-surface/12" />
 
                 {/* Printed paper grain */}
                 <div
@@ -91,6 +91,16 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
 
             {/* Vintage wear — light scuffing worn through the sharp corners */}
             <CornerWear wear={spec.wear} />
+
+            {/* Bright accent spine so the sleeve pops off the background */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-[3px]"
+              style={{ background: spec.pop, boxShadow: `0 0 8px ${spec.pop}aa` }}
+            />
+            <div
+              className="absolute left-2 top-3 w-1.5 h-1.5 rounded-full"
+              style={{ background: spec.pop, boxShadow: `0 0 6px ${spec.pop}` }}
+            />
 
             {/* Progress — contained within the cover square */}
             <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2">

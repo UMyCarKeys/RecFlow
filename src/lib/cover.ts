@@ -26,6 +26,8 @@ function mulberry32(a: number) {
 
 // Warm Spectrum hues
 const HUES = ['#ff8a6b', '#ffc46b', '#ff6b9d', '#b88cff', '#ff9e7d', '#ffd27d', '#f07a8f']
+// Bright "pop" accents that contrast the warm covers and stand out from the bg
+const POP_HUES = ['#c6ff3c', '#7cff9b', '#3cffe0', '#ffe14d', '#7cd4ff', '#b6ff3c']
 
 export type MarkId =
   | 'barcode'
@@ -87,6 +89,7 @@ export interface CoverSpec {
   discTilt: number
   float: { dur: number; delay: number }
   wear: number[] // 4 corner wear opacities (tl, tr, bl, br)
+  pop: string // bright accent color for the sleeve spine
 }
 
 // The many vintage "STEREO" wordmark treatments from the reference sheet
@@ -118,7 +121,7 @@ export function coverSpec(id: string): CoverSpec {
     x: Math.round(rnd() * 100),
     y: Math.round(rnd() * 100),
     spread: 48 + Math.round(rnd() * 22),
-    alpha: alphaHex(0.85 - i * 0.1),
+    alpha: alphaHex(0.95 - i * 0.09),
   }))
 
   // Seeded catalog code, e.g. "LR-05592"
@@ -170,5 +173,6 @@ export function coverSpec(id: string): CoverSpec {
     discTilt: Math.round(rnd() * 30 - 15),
     float: { dur: 5.5 + rnd() * 3, delay: rnd() * 3 },
     wear: [0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22],
+    pop: POP_HUES[Math.floor(rnd() * POP_HUES.length)],
   }
 }

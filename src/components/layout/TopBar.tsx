@@ -3,12 +3,14 @@ import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { useMyTasks } from '@/hooks/useMyTasks'
+import { useChromeStore } from '@/store/chromeStore'
 import { Avatar } from '@/components/ui/Avatar'
 
 export function TopBar() {
   const { user, signOut } = useAuth()
   const { profile, updateProfile } = useProfile()
   const { tasks, count } = useMyTasks(user?.id)
+  const setBarHover = useChromeStore((s) => s.setBarHover)
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
@@ -53,7 +55,12 @@ export function TopBar() {
   }
 
   return (
-    <header id="top-bar" className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-30">
+    <header
+      id="top-bar"
+      onMouseEnter={() => setBarHover(true)}
+      onMouseLeave={() => setBarHover(false)}
+      className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-30"
+    >
       {/* Idle: fully transparent. On hover: full glass fill across the whole width, incl. over the left rail */}
       <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
 
