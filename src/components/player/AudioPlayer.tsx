@@ -27,8 +27,16 @@ export function AudioPlayer() {
     ws.on('timeupdate', (t) => setProgress(t))
     ws.on('ready', (d) => setDuration(d))
     ws.on('play', () => setIsPlaying(true))
-    ws.on('pause', () => setIsPlaying(false))
+    // Capture the exact position when paused, so a pinned comment uses the
+    // paused time rather than defaulting back to 0:00.
+    ws.on('pause', () => {
+      setIsPlaying(false)
+      setProgress(ws.getCurrentTime())
+    })
     ws.on('finish', () => setIsPlaying(false))
+    // Keep progress in sync while scrubbing/seeking (even when paused).
+    ws.on('seeking', (t) => setProgress(t))
+    ws.on('interaction', (t) => setProgress(t))
 
     wavesurferRef.current = ws
     return () => ws.destroy()
