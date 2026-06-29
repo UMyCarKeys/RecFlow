@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Project, ProjectMember } from '@/types/database'
+import type { Project, ProjectMember, MemberRole } from '@/types/database'
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -43,5 +43,27 @@ export function useProject(projectId: string) {
     })
   }, [projectId])
 
-  return { project, members, loading }
+  const addMember = async (userId: string, role: MemberRole) => {
+    const { data, error } = await supabase
+      .from('project_members')
+      .insert({ project_id: projectId, user_id: userId, role })
+      .select('*, profiles(*)')
+      .single()
+    if (!error && data) setMembers((prev) => [...prev, data as ProjectMember])
+    return { error }
+  }
+
+  const updateMemberRole = async (memberId: string, role: MemberRole) => {
+    const { error } = await supabase.from('project_members').update({ role }).eq('id', memberId)
+    if (!error) setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, role } : m)))
+    return { error }
+  }
+
+  const removeMember = async (memberId: string) => {
+    const { error } = await supabase.from('project_members').delete().eq('id', memberId)
+    if (!error) setMembers((prev) => prev.filter((m) => m.id !== memberId))
+    return { error }
+  }
+
+  return { project, members, loading, addMember, updateMemberRole, removeMember }
 }

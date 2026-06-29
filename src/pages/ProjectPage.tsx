@@ -5,6 +5,7 @@ import { useProject } from '@/hooks/useProject'
 import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
 import { VinylRecord } from '@/components/disc/VinylRecord'
+import { MembersModal } from '@/components/project/MembersModal'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,13 +13,14 @@ import type { Track } from '@/types/database'
 
 export function ProjectPage() {
   const { id = '' } = useParams()
-  const { project, loading: projLoading } = useProject(id)
+  const { project, members, loading: projLoading, addMember, updateMemberRole, removeMember } = useProject(id)
   const { tracks, loading: tracksLoading, addTrack } = useTracks(id)
   const { user } = useAuth()
   const navigate = useNavigate()
   const [addingTrack, setAddingTrack] = useState(false)
   const [newTrackTitle, setNewTrackTitle] = useState('')
   const [selecting, setSelecting] = useState<Track | null>(null)
+  const [membersOpen, setMembersOpen] = useState(false)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(1), [setDepth])
@@ -51,7 +53,12 @@ export function ProjectPage() {
             <h1 className="text-2xl font-light tracking-wide text-white">{project.name}</h1>
             {project.description && <p className="text-muted text-sm mt-1 font-light">{project.description}</p>}
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setAddingTrack(true)}>+ Add track</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setMembersOpen(true)}>
+              Members{members.length > 0 ? ` · ${members.length}` : ''}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setAddingTrack(true)}>+ Add track</Button>
+          </div>
         </div>
 
         {addingTrack && (
@@ -92,6 +99,18 @@ export function ProjectPage() {
           <p className="absolute bottom-3 right-4 text-xs text-muted/70">{archivedCount} archived</p>
         )}
       </div>
+
+      {project && (
+        <MembersModal
+          open={membersOpen}
+          onClose={() => setMembersOpen(false)}
+          ownerId={project.owner_id}
+          members={members}
+          onAdd={addMember}
+          onUpdateRole={updateMemberRole}
+          onRemove={removeMember}
+        />
+      )}
     </div>
   )
 }
