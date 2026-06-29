@@ -11,7 +11,10 @@ export function StageProgress({ stage, onChange }: StageProgressProps) {
   const currentIndex = STAGE_ORDER.findIndex((s) => s === stage)
 
   return (
-    <div id="stage-progress" className="flex items-center overflow-x-auto pb-1 -mb-1">
+    <div
+      id="stage-progress"
+      className="flex items-center overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,transparent,#000_12px,#000_calc(100%-12px),transparent)]"
+    >
       {STAGE_ORDER.map((key, i) => {
         const isActive = key === stage
         const isCompleted = i < currentIndex

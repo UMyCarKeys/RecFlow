@@ -28,6 +28,15 @@
 }
 
 @layer utilities {
+  /* Hide scrollbars while keeping scroll (used by the stage pipeline) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Glass panel surface used across the immersive UI */
   .glass {
     background: rgba(36, 31, 43, 0.55);
