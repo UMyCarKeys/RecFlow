@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useProjects } from '@/hooks/useProject'
+import { useTrackProgress } from '@/hooks/useTrackProgress'
 import { useDepthStore } from '@/store/depthStore'
 import { ProjectCard } from '@/components/project/ProjectCard'
 import { CreateProjectModal } from '@/components/project/CreateProjectModal'
@@ -11,6 +12,7 @@ export function DashboardPage() {
   const { projects, loading, error } = useProjects()
   const [createOpen, setCreateOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const { perProject, overall } = useTrackProgress(refreshKey)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(0), [setDepth])
@@ -18,15 +20,35 @@ export function DashboardPage() {
   // Re-trigger fetch on create by bumping key — simpler than a callback chain
   const handleCreated = () => setRefreshKey((k) => k + 1)
 
+  const overallPct = Math.round(overall * 100)
+
   return (
-    <div id="dashboard" className="p-8">
-      <div id="dashboard-header" className="flex items-center justify-between mb-8">
+    <div id="dashboard" className="p-8 max-w-6xl mx-auto">
+      <div id="dashboard-header" className="flex items-end justify-between mb-7">
         <div id="dashboard-title">
           <h1 className="text-3xl font-light tracking-wide text-white">Projects</h1>
           <p className="text-muted text-sm mt-1.5 font-light">Your album workspaces</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </div>
+
+      {/* Overall progress across every track */}
+      {projects.length > 0 && (
+        <div id="dashboard-overall-progress" className="mb-9 max-w-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-light tracking-wide text-muted uppercase">Overall progress</span>
+            <span className="text-xs font-medium text-white/90">{overallPct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-spectrum"
+              initial={{ width: 0 }}
+              animate={{ width: `${overallPct}%` }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div id="dashboard-loading" className="flex justify-center py-16"><Spinner /></div>
@@ -43,10 +65,10 @@ export function DashboardPage() {
           <Button className="mt-4" onClick={() => setCreateOpen(true)}>Create your first project</Button>
         </motion.div>
       ) : (
-        <div id="dashboard-project-grid" key={refreshKey} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div id="dashboard-project-grid" key={refreshKey} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
           {projects.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <ProjectCard project={p} />
+              <ProjectCard project={p} progress={perProject[p.id] ?? 0} />
             </motion.div>
           ))}
         </div>
