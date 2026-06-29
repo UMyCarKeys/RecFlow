@@ -30,8 +30,8 @@ export function DemoPage() {
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-light tracking-wide text-white">{DEMO_PROJECT_NAME}</h1>
-            <p className="text-muted text-sm mt-1 font-light">A sample project — explore how RecFlow works.</p>
+            <h1 className="text-2xl font-light tracking-wide text-[#1a1620]">{DEMO_PROJECT_NAME}</h1>
+            <p className="text-[#6b6275] text-sm mt-1 font-light">A sample project — explore how RecFlow works.</p>
           </div>
           <Button onClick={() => navigate('/')}>Create your project</Button>
         </div>

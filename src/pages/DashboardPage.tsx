@@ -27,8 +27,8 @@ export function DashboardPage() {
     <div id="dashboard" className="p-8 max-w-6xl mx-auto">
       <div id="dashboard-header" className="flex items-end justify-between mb-7">
         <div id="dashboard-title">
-          <h1 className="text-3xl font-light tracking-wide text-white">Projects</h1>
-          <p className="text-muted text-sm mt-1.5 font-light">Your album workspaces</p>
+          <h1 className="text-3xl font-light tracking-wide text-[#1a1620]">Projects</h1>
+          <p className="text-[#6b6275] text-sm mt-1.5 font-light">Your album workspaces</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </div>
@@ -38,10 +38,10 @@ export function DashboardPage() {
         <div className="mb-9 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5">
           <div id="dashboard-overall-progress" className="col-span-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-light tracking-wide text-muted uppercase">Overall</span>
-              <span className="text-xs font-medium text-white/90">{overallPct}%</span>
+              <span className="text-xs font-light tracking-wide text-[#6b6275] uppercase">Overall</span>
+              <span className="text-xs font-medium text-[#1a1620]">{overallPct}%</span>
             </div>
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-black/10 overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-spectrum"
                 initial={{ width: 0 }}
@@ -64,7 +64,7 @@ export function DashboardPage() {
           animate={{ opacity: 1 }}
           className="py-8"
         >
-          <p className="text-muted text-sm mb-5">
+          <p className="text-[#6b6275] text-sm mb-5">
             You don't have any projects yet. Explore the demo to see how RecFlow works, or create your first project.
           </p>
           <Link to="/demo" className="block group/demo w-full max-w-[220px]">

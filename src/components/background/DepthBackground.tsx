@@ -79,40 +79,41 @@ void main() {
   float f = fbm(p + 2.5 * r);
 
   // Warm Spectrum palette (vivid)
-  vec3 base   = vec3(0.102, 0.086, 0.125); // #1a1620
+  vec3 base   = vec3(0.965, 0.95,  0.955); // bright warm white
   vec3 coral  = vec3(1.0,   0.541, 0.42);  // #ff8a6b
   vec3 amber  = vec3(1.0,   0.769, 0.42);  // #ffc46b
   vec3 rose   = vec3(1.0,   0.42,  0.616); // #ff6b9d
   vec3 violet = vec3(0.722, 0.549, 1.0);   // #b88cff
 
+  // Tint the white with soft color washes
   vec3 col = base;
-  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.6);
-  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.56);
-  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.42);
-  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.5);
+  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.45);
+  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.45);
+  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.40);
+  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.42);
 
-  // Keep it washed / semi-dark in the low areas
-  col = mix(base, col, smoothstep(0.02, 0.78, f + 0.22));
+  // Keep it bright (toward white) in the low areas
+  col = mix(base, col, smoothstep(0.0, 0.8, f + 0.25));
 
-  // Gentle saturation lift (kept modest so the background stays muted)
+  // Gentle saturation lift
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(vec3(lum), col, 1.25);
+  col = mix(vec3(lum), col, 1.22);
   col = clamp(col, 0.0, 1.0);
 
-  // Subtle neon streak accents
+  // Neon streak accents as soft color tints (read on white)
   float streak = smoothstep(0.96, 1.0, fbm(p * vec2(0.6, 2.6) + vec2(t * 2.2, 0.0)));
-  col += streak * vec3(1.0, 0.45, 0.85) * 0.35;
+  col = mix(col, vec3(1.0, 0.5, 0.82), streak * 0.16);
 
-  // Sparkle grain — faint twinkling points (soft glints after blur)
+  // Sparkle grain as faint colored specks
   vec2 sgrid = gl_FragCoord.xy / 2.5;
   float sp = hash(floor(sgrid));
   float tw = sin(u_time * 3.2 + sp * 120.0) * 0.5 + 0.5;
-  float sparkle = smoothstep(0.984, 1.0, sp) * tw;
-  col += sparkle * vec3(1.0, 0.92, 0.82) * 0.6;
+  float sparkle = smoothstep(0.986, 1.0, sp) * tw;
+  col = mix(col, vec3(0.85, 0.6, 0.95), sparkle * 0.28);
 
-  // Vignette toward the edges
-  float vig = smoothstep(1.3, 0.3, length(uv - 0.5));
-  col *= mix(0.6, 1.0, vig);
+  // Soft vignette (kept bright)
+  float vig = smoothstep(1.45, 0.45, length(uv - 0.5));
+  col *= mix(0.93, 1.0, vig);
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -244,9 +245,9 @@ export function DepthBackground() {
           left: '-7vw',
           top: '-7vh',
           zIndex: 0,
-          filter: 'blur(54px) saturate(1.14) brightness(0.9)',
+          filter: 'blur(54px) saturate(1.12) brightness(1.04)',
           // CSS fallback shown if WebGL is unavailable, so it never goes flat
-          background: 'radial-gradient(circle at 32% 30%, #2a2030, #1a1620 62%)',
+          background: 'radial-gradient(circle at 32% 30%, #ffffff, #f1ebef 62%)',
         }}
       />
       {/* Crisp frosted grain texture on top of the blurred color glow */}

@@ -89,9 +89,9 @@ export function TrackPage() {
       {/* Deep groove field in the track's color, hovering behind everything */}
       <GrooveField hue={trackHue(trackId)} glow={!!(track.notes || track.links.length)} />
 
-      <div id="track-header" className="relative z-10 p-6 border-b border-white/8 flex-shrink-0">
-        <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-muted mb-3">
-          <Link to={`/project/${projectId}`} className="hover:text-white transition-colors">← Back to album</Link>
+      <div id="track-header" className="relative z-10 p-6 border-b border-black/[0.06] flex-shrink-0">
+        <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-[#6b6275] mb-3">
+          <Link to={`/project/${projectId}`} className="hover:text-[#1a1620] transition-colors">← Back to album</Link>
         </div>
         <div id="track-title-row" className="flex items-center justify-between gap-3 mb-4">
           <EditableTitle
@@ -99,7 +99,7 @@ export function TrackPage() {
             history={track.title_history ?? []}
             canEdit={canEdit}
             onSave={handleRename}
-            className="text-2xl font-light tracking-wide text-white"
+            className="text-2xl font-light tracking-wide text-[#1a1620]"
           />
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={() => (track.archived ? updateTrack({ archived: false }) : setArchiveConfirm(true))}>
@@ -119,7 +119,7 @@ export function TrackPage() {
         <StageProgress stage={track.stage} onChange={handleStageChange} />
       </div>
 
-      <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex">
+      <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex bg-surface-1/55 backdrop-blur-md">
         <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-white/8 overflow-y-auto p-4 space-y-3">
           <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">Versions</h2>
           {versionsLoading ? (

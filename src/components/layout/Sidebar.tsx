@@ -13,8 +13,8 @@ export function Sidebar() {
       onMouseLeave={() => setRailHover(false)}
       className="group/sidebar relative z-40 h-full w-[68px] hover:w-56 transition-[width] duration-300 ease-out flex-shrink-0"
     >
-      {/* Idle: fully transparent. On hover: a full glass panel with a crisp edge */}
-      <div className="absolute inset-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 glass border-r border-white/[0.08] shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]" />
+      {/* Idle: fully transparent. On hover: a light glass panel with a crisp edge */}
+      <div className="absolute inset-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 glass-light border-r border-black/[0.06] shadow-[inset_-1px_0_0_rgba(0,0,0,0.04)]" />
 
       <div className="relative h-full flex flex-col">
         {/* Logo */}
@@ -28,7 +28,7 @@ export function Sidebar() {
               }`}
             />
           </div>
-          <span className="font-semibold tracking-tight text-lg whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
+          <span className="font-semibold tracking-tight text-lg whitespace-nowrap text-[#1a1620] opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
             RecFlow
           </span>
         </div>
@@ -50,8 +50,8 @@ function RailLink({ to, label, icon }: { to: string; label: string; icon: ReactN
       className={({ isActive }) =>
         `relative flex items-center h-11 border-l-2 transition-colors ${
           isActive
-            ? 'border-accent text-white'
-            : 'border-transparent text-muted hover:text-white'
+            ? 'border-accent text-[#1a1620]'
+            : 'border-transparent text-[#6b6275] hover:text-[#1a1620]'
         }`
       }
     >

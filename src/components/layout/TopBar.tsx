@@ -61,13 +61,13 @@ export function TopBar() {
       onMouseLeave={() => setBarHover(false)}
       className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-30"
     >
-      {/* Idle: fully transparent. On hover: full glass fill across the whole width, incl. over the left rail */}
-      <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
+      {/* Idle: fully transparent. On hover: full light-glass fill across the whole width, incl. over the left rail */}
+      <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass-light border-b border-black/[0.06] shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] pointer-events-none" />
 
       {/* Breadcrumb / context */}
       <div className="relative flex items-center gap-2.5 text-sm">
         <span className="w-1.5 h-1.5 rounded-full bg-spectrum-warm" />
-        <span className="text-ink/90 font-medium">{crumb}</span>
+        <span className="text-[#1a1620] font-medium">{crumb}</span>
       </div>
 
       {/* Right cluster: notifications + user */}
@@ -115,7 +115,7 @@ export function TopBar() {
           className="flex items-center gap-2.5 rounded-full pl-1 pr-3 py-1 hover:bg-white/[0.06] transition-colors"
         >
           <Avatar name={displayName} size="sm" />
-          <span className="text-sm text-ink/80 max-w-0 group-hover/topbar:max-w-[160px] overflow-hidden whitespace-nowrap transition-[max-width] duration-300">
+          <span className="text-sm text-[#1a1620] max-w-0 group-hover/topbar:max-w-[160px] overflow-hidden whitespace-nowrap transition-[max-width] duration-300">
             {displayName}
           </span>
         </button>
@@ -168,7 +168,7 @@ function BellIcon({ active }: { active: boolean }) {
       strokeWidth="1.4"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={active ? '' : 'text-muted'}
+      className={active ? '' : 'text-[#6b6275]'}
     >
       <path d="M8 2a4 4 0 0 0-4 4c0 3-1.2 4-1.2 4h10.4S12 9 12 6a4 4 0 0 0-4-4z" />
       <path d="M6.8 13a1.4 1.4 0 0 0 2.4 0" />

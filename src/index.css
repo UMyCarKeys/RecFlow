@@ -56,4 +56,10 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
   }
+  /* Light glass for the chrome (nav + top bar) on the bright background */
+  .glass-light {
+    background: rgba(250, 247, 248, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }

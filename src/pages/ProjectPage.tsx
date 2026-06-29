@@ -82,9 +82,9 @@ export function ProjectPage() {
               history={project.name_history ?? []}
               canEdit={isOwner}
               onSave={handleRename}
-              className="text-2xl font-light tracking-wide text-white"
+              className="text-2xl font-light tracking-wide text-[#1a1620]"
             />
-            {project.description && <p className="text-muted text-sm mt-1 font-light">{project.description}</p>}
+            {project.description && <p className="text-[#6b6275] text-sm mt-1 font-light">{project.description}</p>}
           </div>
           <div className="flex items-center gap-2">
             {isOwner && (
