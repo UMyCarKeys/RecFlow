@@ -86,29 +86,29 @@ void main() {
   vec3 violet = vec3(0.722, 0.549, 1.0);   // #b88cff
 
   vec3 col = base;
-  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.75);
-  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.70);
-  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.50);
-  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.60);
+  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.6);
+  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.56);
+  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.42);
+  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.5);
 
   // Keep it washed / semi-dark in the low areas
-  col = mix(base, col, smoothstep(0.02, 0.75, f + 0.25));
+  col = mix(base, col, smoothstep(0.02, 0.78, f + 0.22));
 
-  // Vividness + saturation boost so the colors shine through the frost
+  // Gentle saturation lift (kept modest so the background stays muted)
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(vec3(lum), col, 1.5);
+  col = mix(vec3(lum), col, 1.25);
   col = clamp(col, 0.0, 1.0);
 
-  // Neon streak accents — thin bright bands flowing through the field
+  // Subtle neon streak accents
   float streak = smoothstep(0.96, 1.0, fbm(p * vec2(0.6, 2.6) + vec2(t * 2.2, 0.0)));
-  col += streak * vec3(1.0, 0.45, 0.85) * 0.6;
+  col += streak * vec3(1.0, 0.45, 0.85) * 0.35;
 
-  // Sparkle grain — bright twinkling points (become soft glints after blur)
+  // Sparkle grain — faint twinkling points (soft glints after blur)
   vec2 sgrid = gl_FragCoord.xy / 2.5;
   float sp = hash(floor(sgrid));
   float tw = sin(u_time * 3.2 + sp * 120.0) * 0.5 + 0.5;
   float sparkle = smoothstep(0.984, 1.0, sp) * tw;
-  col += sparkle * vec3(1.0, 0.92, 0.82) * 1.1;
+  col += sparkle * vec3(1.0, 0.92, 0.82) * 0.6;
 
   // Vignette toward the edges
   float vig = smoothstep(1.3, 0.3, length(uv - 0.5));
@@ -241,7 +241,7 @@ export function DepthBackground() {
           left: '-7vw',
           top: '-7vh',
           zIndex: 0,
-          filter: 'blur(54px) saturate(1.35) brightness(1.05)',
+          filter: 'blur(54px) saturate(1.12) brightness(0.8)',
         }}
       />
       {/* Crisp frosted grain texture on top of the blurred color glow */}
