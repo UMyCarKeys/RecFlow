@@ -54,11 +54,7 @@ export function TopBar() {
 
   return (
     <header id="top-bar" className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-30">
-      {/* Idle tint — stretched across the full page width so it also shows over
-          the left rail. pointer-events-none so the rail still expands on hover. */}
-      <div className="absolute top-0 bottom-0 -left-[260px] right-0 bg-gradient-to-b from-surface-1/55 via-surface-1/20 to-transparent pointer-events-none" />
-
-      {/* Hover: full glass fill stretched across the whole width, incl. over the left rail */}
+      {/* Idle: fully transparent. On hover: full glass fill across the whole width, incl. over the left rail */}
       <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
 
       {/* Breadcrumb / context */}

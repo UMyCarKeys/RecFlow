@@ -12,10 +12,17 @@ interface VersionCardProps {
 }
 
 export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps) {
-  const { activeVersionId, setActive } = usePlayerStore()
+  const { activeVersionId, setActive, isPlaying, setIsPlaying } = usePlayerStore()
   const isActive = activeVersionId === version.id
 
   const handlePlay = () => {
+    // If this version is already loaded, toggle play/pause. Re-calling setActive
+    // reset the player (blob refetch never re-fired for the same id), which froze
+    // the bottom player on a spinner and reset the position to 0:00.
+    if (isActive) {
+      setIsPlaying(!isPlaying)
+      return
+    }
     setActive(version.id, `${trackTitle} (v${version.version_number})`)
   }
 
@@ -35,11 +42,18 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
           className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             isActive ? 'bg-accent text-white' : 'bg-surface-3 text-muted hover:text-white hover:bg-accent/30'
           }`}
-          aria-label={`Play version ${version.version_number}`}
+          aria-label={isActive && isPlaying ? `Pause version ${version.version_number}` : `Play version ${version.version_number}`}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <path d="M3 2.5l8 4.5-8 4.5V2.5z" />
-          </svg>
+          {isActive && isPlaying ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="2.5" y="2" width="3" height="10" rx="1" />
+              <rect x="8.5" y="2" width="3" height="10" rx="1" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M3 2.5l8 4.5-8 4.5V2.5z" />
+            </svg>
+          )}
         </button>
 
         <div id={`version-${version.id}-meta`} className="flex-1 min-w-0">

@@ -7,10 +7,7 @@ export function Sidebar() {
       id="sidebar"
       className="group/sidebar relative z-20 h-full w-[68px] hover:w-56 transition-[width] duration-300 ease-out flex-shrink-0"
     >
-      {/* Collapsed: a left-anchored tint that dissolves to fully transparent */}
-      <div className="absolute inset-0 bg-gradient-to-r from-surface-1/60 via-surface-1/25 to-transparent transition-opacity duration-300 group-hover/sidebar:opacity-0" />
-
-      {/* Expanded: a full glass panel with a crisp edge */}
+      {/* Idle: fully transparent. On hover: a full glass panel with a crisp edge */}
       <div className="absolute inset-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 glass border-r border-white/[0.08] shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)]" />
 
       <div className="relative h-full flex flex-col">
