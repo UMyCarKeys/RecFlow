@@ -187,6 +187,83 @@ function MarkGlyph({ id, code }: { id: MarkId; code: string }) {
       )
     case 'stereo':
       return <span className="text-[8px] font-extrabold tracking-[0.22em]">STEREO</span>
+    case 'stereoArrows':
+      return <span className="inline-flex items-center gap-1 text-[8px] font-extrabold tracking-[0.14em]">◄ STEREO ►</span>
+    case 'stereoOutline':
+      return (
+        <span
+          className="text-[9px] font-extrabold tracking-[0.18em]"
+          style={{ WebkitTextStroke: '0.5px currentColor', color: 'transparent' }}
+        >
+          STEREO
+        </span>
+      )
+    case 'stereoItalic':
+      return <span className="text-[9px] italic font-black tracking-[0.1em]">STEREO</span>
+    case 'stereoBoxed':
+      return (
+        <span
+          className="text-[7px] font-extrabold tracking-[0.18em] px-1 py-[1px] rounded-[1px]"
+          style={{ background: 'currentColor', color: '#1a1620' }}
+        >
+          STEREO
+        </span>
+      )
+    case 'stereoSerif':
+      return <span className="text-[9px] font-serif font-bold tracking-[0.08em]">STEREO</span>
+    case 'stereoClef':
+      return (
+        <span className="inline-flex items-center gap-0.5 text-[8px] font-bold tracking-[0.14em]">
+          <span className="text-[11px] leading-none">♪</span>STEREO
+        </span>
+      )
+    case 'flower':
+      return (
+        <svg viewBox="0 0 18 18" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="9" cy="9" r="3" />
+          {Array.from({ length: 6 }).map((_, i) => {
+            const a = (Math.PI / 3) * i
+            return <circle key={i} cx={9 + Math.cos(a) * 4} cy={9 + Math.sin(a) * 4} r="3" />
+          })}
+        </svg>
+      )
+    case 'asterisk':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
+          {Array.from({ length: 8 }).map((_, i) => {
+            const a = (Math.PI / 4) * i
+            return <line key={i} x1="8" y1="8" x2={8 + Math.cos(a) * 6} y2={8 + Math.sin(a) * 6} />
+          })}
+        </svg>
+      )
+    case 'nestedSquares':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <rect x="1" y="1" width="14" height="14" />
+          <rect x="4" y="4" width="8" height="8" />
+          <rect x="6.5" y="6.5" width="3" height="3" />
+        </svg>
+      )
+    case 'concentric':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="8" cy="8" r="7" />
+          <circle cx="8" cy="8" r="4.5" />
+          <circle cx="8" cy="8" r="2" />
+        </svg>
+      )
+    case 'chevrons':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 3 l4 5 -4 5 M8 3 l4 5 -4 5" />
+        </svg>
+      )
+    case 'grid':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="0.8">
+          <path d="M1 5h14M1 9h14M1 13h14M5 1v14M9 1v14M13 1v14" />
+        </svg>
+      )
     case 'seihin':
       return <span className="text-[11px] font-semibold leading-none">製品</span>
     case 'sizes':
