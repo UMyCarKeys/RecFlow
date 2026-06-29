@@ -4,21 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Warm Spectrum — washed plum-slate base with multi-hue warm accents
         surface: {
-          DEFAULT: '#0d0d0f',
-          1: '#141417',
-          2: '#1c1c21',
-          3: '#252529',
+          DEFAULT: '#1a1620',
+          1: '#1f1a26',
+          2: '#241f2b',
+          3: '#2e2838',
         },
         accent: {
-          DEFAULT: '#7c6af0',
-          hover: '#9b8ef5',
+          DEFAULT: '#ff8a6b', // coral (primary)
+          hover: '#ffa489',
+          amber: '#ffc46b',
+          rose: '#ff6b9d',
+          violet: '#b88cff',
         },
-        muted: '#6b6b7a',
+        muted: '#9a8fa3',
+        ink: '#f4ece8', // warm off-white text
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      backgroundImage: {
+        'spectrum': 'linear-gradient(135deg, #ff8a6b 0%, #ff6b9d 38%, #b88cff 100%)',
+        'spectrum-warm': 'linear-gradient(135deg, #ffc46b 0%, #ff8a6b 55%, #ff6b9d 100%)',
       },
     },
   },

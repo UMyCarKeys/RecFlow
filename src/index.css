@@ -14,8 +14,9 @@
   }
 
   body {
-    background: #0d0d0f;
-    color: #fff;
+    background: #1a1620;
+    color: #f4ece8;
+    font-family: 'Manrope', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -23,5 +24,19 @@
   /* Wavesurfer container override */
   wave {
     overflow: hidden !important;
+  }
+}
+
+@layer utilities {
+  /* Glass panel surface used across the immersive UI */
+  .glass {
+    background: rgba(36, 31, 43, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .glass-strong {
+    background: rgba(31, 26, 38, 0.78);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 }

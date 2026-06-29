@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useProjects } from '@/hooks/useProject'
+import { useDepthStore } from '@/store/depthStore'
 import { ProjectCard } from '@/components/project/ProjectCard'
 import { CreateProjectModal } from '@/components/project/CreateProjectModal'
 import { Button } from '@/components/ui/Button'
@@ -10,6 +11,9 @@ export function DashboardPage() {
   const { projects, loading, error } = useProjects()
   const [createOpen, setCreateOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const setDepth = useDepthStore((s) => s.setDepth)
+
+  useEffect(() => setDepth(0), [setDepth])
 
   // Re-trigger fetch on create by bumping key — simpler than a callback chain
   const handleCreated = () => setRefreshKey((k) => k + 1)

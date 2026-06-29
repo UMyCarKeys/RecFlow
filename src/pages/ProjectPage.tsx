@@ -1,7 +1,8 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
+import { useDepthStore } from '@/store/depthStore'
 import { useTracks } from '@/hooks/useTrack'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -19,6 +20,9 @@ export function ProjectPage() {
   const navigate = useNavigate()
   const [addingTrack, setAddingTrack] = useState(false)
   const [newTrackTitle, setNewTrackTitle] = useState('')
+  const setDepth = useDepthStore((s) => s.setDepth)
+
+  useEffect(() => setDepth(1), [setDepth])
 
   const latestVersions = useLatestVersionsForTracks(tracks)
 

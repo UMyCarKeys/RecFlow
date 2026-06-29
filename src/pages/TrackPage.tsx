@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTrack } from '@/hooks/useTrack'
+import { useDepthStore } from '@/store/depthStore'
 import { useVersions } from '@/hooks/useVersions'
 import { useProject } from '@/hooks/useProject'
 import { useRealtimeVersions } from '@/hooks/useRealtimeVersions'
@@ -22,6 +23,9 @@ export function TrackPage() {
   const { members } = useProject(projectId)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
+  const setDepth = useDepthStore((s) => s.setDepth)
+
+  useEffect(() => setDepth(2), [setDepth])
 
   useRealtimeVersions(trackId, (v: Version) => addVersion(v))
 
