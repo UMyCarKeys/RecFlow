@@ -48,10 +48,14 @@ export function AudioPlayer() {
   // Load blob URL when it changes
   useEffect(() => {
     if (!blobUrl || !wavesurferRef.current) return
-    wavesurferRef.current.load(blobUrl).then(() => {
+    const ws = wavesurferRef.current
+    ws.load(blobUrl).then(() => {
       // Revoke after wavesurfer has decoded into Web Audio buffers
       URL.revokeObjectURL(blobUrl)
-      wavesurferRef.current?.play()
+      // A/B compare: resume at the same position when switching lines
+      const startAt = usePlayerStore.getState().startAt
+      if (startAt > 0) ws.setTime(startAt)
+      ws.play()
     })
   }, [blobUrl])
 

@@ -72,6 +72,8 @@ export interface Version {
   tags: string[]
   uploaded_by: string
   created_at: string
+  variant: string | null // line of inspiration; null = main line
+  set_aside: boolean // hidden after committing to one line past Mix
   profiles?: Profile
 }
 

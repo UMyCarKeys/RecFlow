@@ -3,6 +3,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Tag } from '@/components/ui/Tag'
 import { formatBytes, formatDuration, timeAgo } from '@/lib/utils'
 import { displayName } from '@/lib/displayName'
+import { variantHue } from '@/lib/variants'
 import type { Version } from '@/types/database'
 
 interface VersionCardProps {
@@ -63,6 +64,14 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
             </span>
             {isLatest && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">latest</span>
+            )}
+            {version.variant && (
+              <span
+                className="text-xs px-1.5 py-0.5 rounded font-medium"
+                style={{ background: `${variantHue(version.variant)}22`, color: variantHue(version.variant) }}
+              >
+                {version.variant}
+              </span>
             )}
             {version.tags.map((t) => <Tag key={t} label={t} />)}
           </div>

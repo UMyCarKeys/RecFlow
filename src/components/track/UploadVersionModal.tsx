@@ -22,6 +22,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
   const [description, setDescription] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
+  const [variant, setVariant] = useState('')
   const [progress, setProgress] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -58,6 +59,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         duration: null,
         description: description.trim() || null,
         tags,
+        variant: variant.trim() || null,
         uploaded_by: user.id,
         version_number: 0,
       })
@@ -68,6 +70,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         setFile(null)
         setDescription('')
         setTags([])
+        setVariant('')
         setProgress(0)
         onUploaded()
         onClose()
@@ -116,6 +119,16 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
             rows={2}
             placeholder="e.g. Reworked the bridge, new vocal take on chorus 2"
             className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent resize-none"
+          />
+        </div>
+
+        <div id="upload-variant">
+          <label className="block text-xs text-muted mb-1">Line / variant (optional)</label>
+          <input
+            value={variant}
+            onChange={(e) => setVariant(e.target.value)}
+            placeholder="e.g. Warm take, Aggressive take — leave blank for the main line"
+            className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
           />
         </div>
 

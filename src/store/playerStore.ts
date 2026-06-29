@@ -12,8 +12,9 @@ interface PlayerState {
   isLoading: boolean
   loadPhase: LoadPhase
   loadProgress: number // 0..1 (meaningful during 'download')
+  startAt: number // seconds to seek to once loaded (for A/B compare)
 
-  setActive: (versionId: string, trackTitle: string) => void
+  setActive: (versionId: string, trackTitle: string, startAt?: number) => void
   setBlobUrl: (url: string | null) => void
   setIsPlaying: (v: boolean) => void
   setProgress: (v: number) => void
@@ -33,8 +34,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isLoading: false,
   loadPhase: null,
   loadProgress: 0,
+  startAt: 0,
 
-  setActive: (versionId, trackTitle) => {
+  setActive: (versionId, trackTitle, startAt = 0) => {
     const prev = get().blobUrl
     if (prev) URL.revokeObjectURL(prev)
     set({
@@ -47,6 +49,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       isLoading: true,
       loadPhase: 'request',
       loadProgress: 0,
+      startAt,
     })
   },
   // Blob is ready but WaveSurfer still needs to decode it.

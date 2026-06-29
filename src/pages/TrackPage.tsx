@@ -12,23 +12,28 @@ import { StageProgress } from '@/components/track/StageProgress'
 import { IdeaBoard } from '@/components/track/IdeaBoard'
 import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
+import { CompareLines } from '@/components/track/CompareLines'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { trackHue } from '@/lib/trackColor'
+import { groupVariants, variantHue, COMPARE_STAGES, POST_MIX_STAGES } from '@/lib/variants'
 import type { Version, TrackStage } from '@/types/database'
 
 export function TrackPage() {
   const { id: projectId = '', trackId = '' } = useParams()
   const { track, loading: trackLoading, updateTrack } = useTrack(trackId)
-  const { versions, loading: versionsLoading, addVersion } = useVersions(trackId)
+  const { versions, loading: versionsLoading, addVersion, commitToVariant } = useVersions(trackId)
   const { members } = useProject(projectId)
   const { user } = useAuth()
   const [uploadOpen, setUploadOpen] = useState(false)
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
   const [archiveConfirm, setArchiveConfirm] = useState(false)
+  const [commitTarget, setCommitTarget] = useState<TrackStage | null>(null)
+  const [keepVariant, setKeepVariant] = useState<string | null>(null)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(2), [setDepth])
@@ -48,6 +53,27 @@ export function TrackPage() {
 
   if (trackLoading) return <div id="track-loading" className="flex justify-center py-24"><Spinner /></div>
   if (!track) return <p className="text-muted text-sm p-8">Track not found.</p>
+
+  const lines = groupVariants(versions)
+  const showCompare = (COMPARE_STAGES as readonly string[]).includes(track.stage) && versions.length > 0
+
+  // Advancing past Mix with multiple lines forces committing to one direction
+  const handleStageChange = (s: TrackStage) => {
+    if ((POST_MIX_STAGES as readonly string[]).includes(s) && lines.length > 1) {
+      setKeepVariant(lines[0].variant)
+      setCommitTarget(s)
+      return
+    }
+    updateTrack({ stage: s })
+  }
+
+  const handleCommit = async () => {
+    if (commitTarget === null) return
+    await commitToVariant(keepVariant)
+    await updateTrack({ stage: commitTarget })
+    setActiveVersionId(null)
+    setCommitTarget(null)
+  }
 
   return (
     <motion.div
@@ -87,10 +113,7 @@ export function TrackPage() {
           </div>
         )}
 
-        <StageProgress
-          stage={track.stage}
-          onChange={(s: TrackStage) => updateTrack({ stage: s })}
-        />
+        <StageProgress stage={track.stage} onChange={handleStageChange} />
       </div>
 
       <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex">
@@ -120,6 +143,14 @@ export function TrackPage() {
           {track.stage === 'idea' && (
             <IdeaBoard ideas={track.links} onChange={(ideas) => updateTrack({ links: ideas })} />
           )}
+          {showCompare && (
+            <CompareLines
+              versions={versions}
+              trackTitle={track.title}
+              activeVersionId={selectedVersion?.id ?? null}
+              onSelectVersion={setActiveVersionId}
+            />
+          )}
           {selectedVersion ? (
             <CommentThread versionId={selectedVersion.id} projectId={projectId} members={members} />
           ) : (
@@ -143,6 +174,35 @@ export function TrackPage() {
         onConfirm={() => updateTrack({ archived: true })}
         onClose={() => setArchiveConfirm(false)}
       />
+
+      <Modal open={commitTarget !== null} onClose={() => setCommitTarget(null)} title="Commit to one direction">
+        <p className="text-sm text-muted leading-relaxed">
+          Moving past Mix means choosing the line to carry forward. The other lines will be set aside — you won't lose
+          them, but they leave the active record so the project keeps moving.
+        </p>
+        <div className="mt-4 space-y-2">
+          {lines.map((line) => {
+            const active = (keepVariant ?? null) === (line.variant ?? null)
+            return (
+              <button
+                key={line.label}
+                onClick={() => setKeepVariant(line.variant)}
+                className={`w-full flex items-center gap-2 p-2.5 rounded-lg border transition-colors ${
+                  active ? 'border-accent bg-accent/10' : 'border-white/10 hover:border-white/20'
+                }`}
+              >
+                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: variantHue(line.variant) }} />
+                <span className="text-sm text-white flex-1 text-left truncate">{line.label}</span>
+                <span className="text-xs text-muted">v{line.latest.version_number}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="ghost" onClick={() => setCommitTarget(null)}>Cancel</Button>
+          <Button onClick={handleCommit}>Keep this line &amp; continue</Button>
+        </div>
+      </Modal>
     </motion.div>
   )
 }
