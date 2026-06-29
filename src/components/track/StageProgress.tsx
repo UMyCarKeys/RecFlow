@@ -1,13 +1,6 @@
 import { cn } from '@/lib/utils'
+import { STAGE_ORDER, STAGE_LABEL, STAGE_HINT } from '@/lib/progress'
 import type { TrackStage } from '@/types/database'
-
-const STAGES: { key: TrackStage; label: string }[] = [
-  { key: 'idea',      label: 'Idea'      },
-  { key: 'demo',      label: 'Demo'      },
-  { key: 'mix',       label: 'Mix'       },
-  { key: 'final_mix', label: 'Final Mix' },
-  { key: 'master',    label: 'Master'    },
-]
 
 interface StageProgressProps {
   stage: TrackStage
@@ -15,20 +8,21 @@ interface StageProgressProps {
 }
 
 export function StageProgress({ stage, onChange }: StageProgressProps) {
-  const currentIndex = STAGES.findIndex((s) => s.key === stage)
+  const currentIndex = STAGE_ORDER.findIndex((s) => s === stage)
 
   return (
-    <div id="stage-progress" className="flex items-center">
-      {STAGES.map((s, i) => {
-        const isActive = s.key === stage
+    <div id="stage-progress" className="flex items-center overflow-x-auto pb-1 -mb-1">
+      {STAGE_ORDER.map((key, i) => {
+        const isActive = key === stage
         const isCompleted = i < currentIndex
         return (
-          <div key={s.key} id={`stage-step-${s.key}`} className="flex items-center">
+          <div key={key} id={`stage-step-${key}`} className="flex items-center flex-shrink-0">
             <button
-              id={`stage-btn-${s.key}`}
-              onClick={() => onChange?.(s.key)}
+              id={`stage-btn-${key}`}
+              onClick={() => onChange?.(key)}
+              title={STAGE_HINT[key]}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
                 isActive && 'bg-accent/20 text-accent ring-1 ring-accent/40',
                 isCompleted && !isActive && 'text-accent/70 hover:text-accent',
                 !isActive && !isCompleted && 'text-muted hover:text-white',
@@ -44,10 +38,13 @@ export function StageProgress({ stage, onChange }: StageProgressProps) {
               >
                 {isCompleted ? '✓' : i + 1}
               </span>
-              {s.label}
+              {STAGE_LABEL[key]}
             </button>
-            {i < STAGES.length - 1 && (
-              <div id={`stage-connector-${s.key}`} className={cn('h-px w-6 mx-1 flex-shrink-0', i < currentIndex ? 'bg-accent/40' : 'bg-white/10')} />
+            {i < STAGE_ORDER.length - 1 && (
+              <div
+                id={`stage-connector-${key}`}
+                className={cn('h-px w-5 mx-0.5 flex-shrink-0', i < currentIndex ? 'bg-accent/40' : 'bg-white/10')}
+              />
             )}
           </div>
         )
