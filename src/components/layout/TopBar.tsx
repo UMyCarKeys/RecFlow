@@ -51,8 +51,8 @@ export function TopBar() {
           the left rail. pointer-events-none so the rail still expands on hover. */}
       <div className="absolute top-0 bottom-0 -left-[260px] right-0 bg-gradient-to-b from-surface-1/55 via-surface-1/20 to-transparent pointer-events-none" />
 
-      {/* Hover: a full glass panel over the top-bar region only */}
-      <div className="absolute inset-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
+      {/* Hover: full glass fill stretched across the whole width, incl. over the left rail */}
+      <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] pointer-events-none" />
 
       {/* Breadcrumb / context */}
       <div className="relative flex items-center gap-2.5 text-sm">
