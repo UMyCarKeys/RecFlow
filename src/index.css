@@ -37,6 +37,12 @@
     display: none;
   }
 
+  /* Indeterminate loading sweep for the player status bar */
+  @keyframes indeterminate {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(360%); }
+  }
+
   /* Glass panel surface used across the immersive UI */
   .glass {
     background: rgba(36, 31, 43, 0.55);

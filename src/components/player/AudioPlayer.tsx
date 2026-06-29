@@ -6,7 +6,7 @@ import { fetchAudioBlob } from '@/lib/r2'
 export function AudioPlayer() {
   const wavesurferRef = useRef<WaveSurfer | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { activeVersionId, blobUrl, isPlaying, setBlobUrl, setIsPlaying, setProgress, setDuration, setLoading } = usePlayerStore()
+  const { activeVersionId, blobUrl, isPlaying, setBlobUrl, setIsPlaying, setProgress, setDuration, setLoading, setLoad } = usePlayerStore()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -25,7 +25,10 @@ export function AudioPlayer() {
     })
 
     ws.on('timeupdate', (t) => setProgress(t))
-    ws.on('ready', (d) => setDuration(d))
+    ws.on('ready', (d) => {
+      setDuration(d)
+      setLoading(false) // decode finished — clear the loading status
+    })
     ws.on('play', () => setIsPlaying(true))
     // Capture the exact position when paused, so a pinned comment uses the
     // paused time rather than defaulting back to 0:00.
@@ -55,7 +58,7 @@ export function AudioPlayer() {
   // Fetch blob when active version changes
   useEffect(() => {
     if (!activeVersionId) return
-    fetchAudioBlob(activeVersionId)
+    fetchAudioBlob(activeVersionId, (phase, p) => setLoad(phase, p))
       .then(setBlobUrl)
       .catch((err) => {
         console.error('[AudioPlayer] fetch failed:', err)
