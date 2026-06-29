@@ -180,13 +180,16 @@ export function DepthBackground() {
     resize()
     window.addEventListener('resize', resize)
 
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+
     const targetMouse = { x: 0, y: 0 }
     const curMouse = { x: 0, y: 0 }
     const onMove = (e: MouseEvent) => {
       targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1
       targetMouse.y = -((e.clientY / window.innerHeight) * 2 - 1)
     }
-    window.addEventListener('mousemove', onMove)
+    // Respect reduced-motion: no parallax follow, and slowed drift below
+    if (!reduceMotion) window.addEventListener('mousemove', onMove, { passive: true })
 
     // Eased depth transition (ramp up / taper out) — snappier for a stronger zoom
     const DURATION = 0.7
@@ -198,7 +201,7 @@ export function DepthBackground() {
     const start = performance.now()
     let raf = 0
     const frame = () => {
-      const time = (performance.now() - start) / 1000
+      const time = ((performance.now() - start) / 1000) * (reduceMotion ? 0.3 : 1)
 
       // Mouse follow (a touch more responsive)
       curMouse.x += (targetMouse.x - curMouse.x) * 0.045
@@ -242,6 +245,8 @@ export function DepthBackground() {
           top: '-7vh',
           zIndex: 0,
           filter: 'blur(54px) saturate(1.14) brightness(0.9)',
+          // CSS fallback shown if WebGL is unavailable, so it never goes flat
+          background: 'radial-gradient(circle at 32% 30%, #2a2030, #1a1620 62%)',
         }}
       />
       {/* Crisp frosted grain texture on top of the blurred color glow */}

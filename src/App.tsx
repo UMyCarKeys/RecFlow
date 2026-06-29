@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -26,6 +27,7 @@ const pageVariants = {
 export default function App() {
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -73,6 +75,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
