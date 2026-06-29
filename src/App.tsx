@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { DemoPage } from '@/pages/DemoPage'
 import { ProjectPage } from '@/pages/ProjectPage'
 import { TrackPage } from '@/pages/TrackPage'
 import { Spinner } from '@/components/ui/Spinner'
@@ -41,6 +42,14 @@ export default function App() {
               element={
                 <motion.div key="dashboard" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">
                   <DashboardPage />
+                </motion.div>
+              }
+            />
+            <Route
+              path="/demo"
+              element={
+                <motion.div key="demo" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">
+                  <DemoPage />
                 </motion.div>
               }
             />

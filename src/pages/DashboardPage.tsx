@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useProjects } from '@/hooks/useProject'
 import { useTrackProgress } from '@/hooks/useTrackProgress'
@@ -61,10 +62,24 @@ export function DashboardPage() {
           id="dashboard-empty"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-24"
+          className="py-8"
         >
-          <p className="text-muted text-sm">No projects yet.</p>
-          <Button className="mt-4" onClick={() => setCreateOpen(true)}>Create your first project</Button>
+          <p className="text-muted text-sm mb-5">
+            You don't have any projects yet. Explore the demo to see how RecFlow works, or create your first project.
+          </p>
+          <Link to="/demo" className="block group/demo w-full max-w-[220px]">
+            <div className="relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-spectrum shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+              <div className="absolute inset-0 bg-surface/40" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                <DemoDisc />
+                <span className="text-white font-semibold tracking-wide">Demo</span>
+                <span className="text-xs text-white/80 group-hover/demo:translate-x-0.5 transition-transform">Explore →</span>
+              </div>
+            </div>
+            <p className="text-sm text-white font-medium mt-3 px-1">Demo project</p>
+            <p className="text-xs text-muted px-1 font-light">Sample tracks, comments &amp; ideas</p>
+          </Link>
+          <Button className="mt-6" onClick={() => setCreateOpen(true)}>Create your first project</Button>
         </motion.div>
       ) : (
         <div id="dashboard-project-grid" key={refreshKey} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
@@ -78,5 +93,16 @@ export function DashboardPage() {
 
       <CreateProjectModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleCreated} />
     </div>
+  )
+}
+
+function DemoDisc() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+      <circle cx="22" cy="22" r="20" fill="#120f17" />
+      <circle cx="22" cy="22" r="14" fill="none" stroke="#ffffff" strokeOpacity="0.1" strokeWidth="0.8" />
+      <circle cx="22" cy="22" r="8" fill="#ff8a6b" fillOpacity="0.9" />
+      <circle cx="22" cy="22" r="2" fill="#08060c" />
+    </svg>
   )
 }
