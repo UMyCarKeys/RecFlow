@@ -128,9 +128,9 @@ export function ProjectPage() {
         ) : (
           <motion.div
             className="w-full h-full p-6"
-            initial={{ scale: 0.72, opacity: 0 }}
-            animate={selecting ? { scale: 2.6, opacity: 0 } : { scale: 1, opacity: 1 }}
-            transition={{ duration: selecting ? 0.55 : 0.7, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={selecting ? { scale: 3.6, opacity: 0 } : { scale: 1, opacity: 1 }}
+            transition={{ duration: selecting ? 0.5 : 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
             <VinylRecord tracks={activeTracks} projectName={project.name} onSelect={handleSelect} />
           </motion.div>

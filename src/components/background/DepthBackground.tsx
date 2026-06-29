@@ -64,12 +64,12 @@ void main() {
 
   // Inverted depth zoom: navigating deeper enlarges the field (dive-in feel).
   // Eased in JS, so this ramps up then tapers off during transitions.
-  float zoom = 1.0 - u_depth * 0.16;
+  float zoom = 1.0 - u_depth * 0.26;
   vec2 center = 0.5 * vec2(aspect, 1.0);
   p = (p - center) * zoom + center;
 
-  float t = u_time * 0.035;
-  vec2 mouseOff = u_mouse * 0.08; // mouse parallax sensitivity
+  float t = u_time * 0.05;
+  vec2 mouseOff = u_mouse * 0.13; // mouse parallax sensitivity
 
   // Domain warping for organic, flowing color movement
   vec2 q = vec2(fbm(p + vec2(0.0, t) + mouseOff),
@@ -188,8 +188,8 @@ export function DepthBackground() {
     }
     window.addEventListener('mousemove', onMove)
 
-    // Eased depth transition (ramp up / taper out)
-    const DURATION = 0.95
+    // Eased depth transition (ramp up / taper out) — snappier for a stronger zoom
+    const DURATION = 0.7
     let displayDepth = useDepthStore.getState().depth
     let fromDepth = displayDepth
     let toDepth = displayDepth
@@ -200,9 +200,9 @@ export function DepthBackground() {
     const frame = () => {
       const time = (performance.now() - start) / 1000
 
-      // Gentle mouse follow
-      curMouse.x += (targetMouse.x - curMouse.x) * 0.03
-      curMouse.y += (targetMouse.y - curMouse.y) * 0.03
+      // Mouse follow (a touch more responsive)
+      curMouse.x += (targetMouse.x - curMouse.x) * 0.045
+      curMouse.y += (targetMouse.y - curMouse.y) * 0.045
 
       const target = useDepthStore.getState().depth
       if (target !== toDepth) {
