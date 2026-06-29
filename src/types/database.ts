@@ -55,7 +55,7 @@ export interface Track {
   updated_at: string
   stage: TrackStage
   notes: string | null
-  links: { url: string; label: string }[]
+  links: { url: string; label: string; text?: string; at?: string }[]
   archived: boolean
   title_history: NameHistoryEntry[]
 }

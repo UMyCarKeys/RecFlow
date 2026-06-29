@@ -118,12 +118,7 @@ export function TrackPage() {
 
         <div id="track-right-panel" className="flex-1 overflow-y-auto p-6 space-y-8">
           {track.stage === 'idea' && (
-            <IdeaBoard
-              notes={track.notes}
-              links={track.links}
-              onNotesChange={(notes) => updateTrack({ notes })}
-              onLinksChange={(links) => updateTrack({ links })}
-            />
+            <IdeaBoard ideas={track.links} onChange={(ideas) => updateTrack({ links: ideas })} />
           )}
           {selectedVersion ? (
             <CommentThread versionId={selectedVersion.id} projectId={projectId} members={members} />
