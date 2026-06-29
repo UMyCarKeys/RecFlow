@@ -110,22 +110,22 @@ export function TrackPage() {
         </div>
 
         {track.archived && (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-surface-3/70 border border-white/10 text-xs text-muted">
+          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-black/[0.06] text-xs text-[#6b6275]">
             This track is archived — it won't be used for this project and is excluded from the album's progress. Use
-            <span className="text-white"> Restore</span> to bring it back.
+            <span className="text-[#1a1620] font-medium"> Restore</span> to bring it back.
           </div>
         )}
 
         <StageProgress stage={track.stage} onChange={handleStageChange} />
       </div>
 
-      <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex bg-surface-1/55 backdrop-blur-md">
-        <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-white/8 overflow-y-auto p-4 space-y-3">
-          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">Versions</h2>
+      <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex">
+        <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-black/[0.06] overflow-y-auto p-4 space-y-3">
+          <h2 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Versions</h2>
           {versionsLoading ? (
             <div id="track-versions-loading" className="flex justify-center py-8"><Spinner /></div>
           ) : versions.length === 0 ? (
-            <p id="track-versions-empty" className="text-xs text-muted">No versions yet. Upload one above.</p>
+            <p id="track-versions-empty" className="text-xs text-[#6b6275]">No versions yet. Upload one above.</p>
           ) : (
             versions.map((v, i) => (
               <motion.div
@@ -171,7 +171,7 @@ export function TrackPage() {
           {selectedVersion ? (
             <CommentThread versionId={selectedVersion.id} projectId={projectId} members={members} />
           ) : (
-            <p id="track-no-version-hint" className="text-muted text-sm">Select a version or upload one to see comments and tasks.</p>
+            <p id="track-no-version-hint" className="text-[#6b6275] text-sm">Select a version or upload one to see comments and tasks.</p>
           )}
         </div>
       </div>

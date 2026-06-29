@@ -34,52 +34,52 @@ export function CommentItem({ comment, members, onReply, onTaskDone, onDeleteTas
         <Avatar src={comment.profiles?.avatar_url} name={displayName(comment.profiles)} size="sm" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-white">{displayName(comment.profiles)}</span>
+            <span className="text-xs font-semibold text-[#1a1620]">{displayName(comment.profiles)}</span>
             {comment.timestamp_s != null && (
               <button
                 onClick={() => activeVersionId && setProgress(comment.timestamp_s!)}
-                className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent/20 text-accent-hover hover:bg-accent/30 transition-colors"
+                className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent/15 text-accent hover:bg-accent/25 transition-colors"
               >
                 {formatDuration(comment.timestamp_s)}
               </button>
             )}
-            <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
+            <span className="text-xs text-[#9a8fa3]">{timeAgo(comment.created_at)}</span>
           </div>
-          <p className="text-sm text-white/80 mt-1 leading-relaxed">{comment.body}</p>
+          <p className="text-sm text-[#3a3340] mt-1 leading-relaxed">{comment.body}</p>
 
           {/* Inline task */}
           {task && (
-            <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-surface-3/70 border border-white/8">
+            <div className="mt-2 flex items-center gap-2 p-2 rounded-lg field-glass border border-black/[0.06]">
               <button
                 onClick={() => onTaskDone(task.id, !done)}
                 className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
-                  done ? 'bg-accent border-accent text-white' : 'border-white/30 text-transparent hover:border-accent'
+                  done ? 'bg-accent border-accent text-white' : 'border-black/30 text-transparent hover:border-accent'
                 }`}
                 title={done ? 'Mark not done' : 'Mark done'}
               >
                 ✓
               </button>
-              <span className={`text-xs flex-1 min-w-0 truncate ${done ? 'line-through text-muted' : 'text-white/90'}`}>
+              <span className={`text-xs flex-1 min-w-0 truncate ${done ? 'line-through text-[#9a8fa3]' : 'text-[#2a2433]'}`}>
                 {task.title}
               </span>
               {task.assignee && (
-                <span className="flex items-center gap-1 text-xs text-muted flex-shrink-0">
+                <span className="flex items-center gap-1 text-xs text-[#6b6275] flex-shrink-0">
                   <Avatar src={task.assignee.avatar_url} name={displayName(task.assignee)} size="sm" />
                   {displayName(task.assignee)}
                 </span>
               )}
-              <button onClick={() => setConfirm('task')} className="text-muted hover:text-red-400 transition-colors flex-shrink-0" title="Remove task">
+              <button onClick={() => setConfirm('task')} className="text-[#9a8fa3] hover:text-red-500 transition-colors flex-shrink-0" title="Remove task">
                 ✕
               </button>
             </div>
           )}
 
           <div className="flex items-center gap-3 mt-1">
-            <button onClick={() => setReplying((v) => !v)} className="text-xs text-muted hover:text-white transition-colors">
+            <button onClick={() => setReplying((v) => !v)} className="text-xs text-[#6b6275] hover:text-[#1a1620] transition-colors">
               Reply
             </button>
             {isAuthor && (
-              <button onClick={() => setConfirm('comment')} className="text-xs text-muted hover:text-red-400 transition-colors">
+              <button onClick={() => setConfirm('comment')} className="text-xs text-[#6b6275] hover:text-red-500 transition-colors">
                 Delete
               </button>
             )}
@@ -94,7 +94,7 @@ export function CommentItem({ comment, members, onReply, onTaskDone, onDeleteTas
       )}
 
       {comment.replies && comment.replies.length > 0 && (
-        <div id={`comment-${comment.id}-replies`} className="ml-10 space-y-3 border-l border-white/8 pl-3">
+        <div id={`comment-${comment.id}-replies`} className="ml-10 space-y-3 border-l border-black/[0.08] pl-3">
           {comment.replies.map((r) => (
             <CommentItem
               key={r.id}

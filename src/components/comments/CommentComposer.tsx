@@ -58,7 +58,7 @@ export function CommentComposer({
         onChange={(e) => setBody(e.target.value)}
         placeholder={placeholder}
         rows={2}
-        className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent resize-none"
+        className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent resize-none"
       />
 
       {showTaskOption && taskOn && (
@@ -67,12 +67,12 @@ export function CommentComposer({
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Task label (optional)"
-            className="flex-1 bg-surface-3 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
+            className="flex-1 field-glass border border-black/10 rounded-lg px-3 py-1.5 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent"
           />
           <select
             value={assignee}
             onChange={(e) => setAssignee(e.target.value)}
-            className="bg-surface-3 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-accent"
+            className="field-glass border border-black/10 rounded-lg px-2 py-1.5 text-sm text-[#1a1620] focus:outline-none focus:border-accent"
           >
             <option value="">Assign…</option>
             {members.map((m) => (
@@ -85,7 +85,7 @@ export function CommentComposer({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           {activeVersionId && !parentId && (
-            <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
+            <label className="flex items-center gap-2 text-xs text-[#6b6275] cursor-pointer">
               <input type="checkbox" checked={pin} onChange={(e) => setPin(e.target.checked)} className="accent-accent" />
               Pin {formatDuration(progress)}
             </label>

@@ -29,11 +29,11 @@ export function CompareLines({ versions, trackTitle, activeVersionId, onSelectVe
   }
 
   return (
-    <div id="compare-lines" className="border border-white/8 rounded-xl p-4 bg-surface-2 space-y-3">
+    <div id="compare-lines" className="card-glass border border-black/[0.06] rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Lines of inspiration</h3>
-          <p className="text-[11px] text-muted/70 mt-0.5">Explore parallel takes — you'll commit to one past Mix.</p>
+          <h3 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Lines of inspiration</h3>
+          <p className="text-[11px] text-[#9a8fa3] mt-0.5">Explore parallel takes — you'll commit to one past Mix.</p>
         </div>
         {lines.length > 1 && <Switch checked={abLock} onChange={setAbLock} label="A/B lock" />}
       </div>
@@ -48,14 +48,14 @@ export function CompareLines({ versions, trackTitle, activeVersionId, onSelectVe
               key={line.label}
               onClick={() => onSelectVersion(line.latest.id)}
               className={`rounded-lg p-3 cursor-pointer transition-colors border ${
-                selected ? 'border-accent/50 bg-accent/5' : 'border-white/8 bg-surface-3/50 hover:border-white/16'
+                selected ? 'border-accent/50 bg-accent/10' : 'field-glass border-black/[0.06] hover:border-black/[0.12]'
               }`}
             >
               <div className="flex items-center gap-2">
                 <MiniDisc hue={hue} spinning={playingLine && isPlaying} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-white font-medium truncate">{line.label}</p>
-                  <p className="text-[11px] text-muted">
+                  <p className="text-sm text-[#1a1620] font-medium truncate">{line.label}</p>
+                  <p className="text-[11px] text-[#6b6275]">
                     v{line.latest.version_number} · {line.versions.length} take{line.versions.length > 1 ? 's' : ''}
                   </p>
                 </div>
@@ -81,10 +81,10 @@ export function CompareLines({ versions, trackTitle, activeVersionId, onSelectVe
 function MiniDisc({ hue, spinning }: { hue: string; spinning: boolean }) {
   return (
     <svg viewBox="0 0 32 32" className={`w-8 h-8 flex-shrink-0 ${spinning ? 'animate-[spin_3s_linear_infinite]' : ''}`}>
-      <circle cx="16" cy="16" r="15" fill="#120f17" />
-      <circle cx="16" cy="16" r="11" fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="0.5" />
-      <circle cx="16" cy="16" r="6" fill={hue} fillOpacity="0.85" />
-      <circle cx="16" cy="16" r="1.5" fill="#08060c" />
+      <circle cx="16" cy="16" r="15" fill="#ddd0db" />
+      <circle cx="16" cy="16" r="11" fill="none" stroke="#000000" strokeOpacity="0.06" strokeWidth="0.5" />
+      <circle cx="16" cy="16" r="6" fill={hue} fillOpacity="0.9" />
+      <circle cx="16" cy="16" r="1.5" fill="#2a2433" />
     </svg>
   )
 }

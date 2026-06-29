@@ -32,8 +32,8 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
       id={`version-card-${version.id}`}
       className={`rounded-xl border p-4 transition-colors ${
         isActive
-          ? 'bg-accent/10 border-accent/40'
-          : 'bg-surface-2 border-white/8 hover:border-white/16'
+          ? 'bg-accent/15 border-accent/40'
+          : 'card-glass border-black/[0.06] hover:border-black/[0.12]'
       }`}
     >
       <div id={`version-${version.id}-body`} className="flex items-start gap-3">
@@ -41,7 +41,7 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
           onClick={handlePlay}
           onContextMenu={(e) => e.preventDefault()}
           className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-            isActive ? 'bg-accent text-white' : 'bg-surface-3 text-muted hover:text-white hover:bg-accent/30'
+            isActive ? 'bg-accent text-white' : 'bg-black/[0.05] text-[#6b6275] hover:text-accent hover:bg-accent/15'
           }`}
           aria-label={isActive && isPlaying ? `Pause version ${version.version_number}` : `Play version ${version.version_number}`}
         >
@@ -59,7 +59,7 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
 
         <div id={`version-${version.id}-meta`} className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-surface-3 text-accent-hover">
+            <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-black/[0.05] text-accent">
               v{version.version_number}
             </span>
             {isLatest && (
@@ -77,15 +77,15 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
           </div>
 
           {version.description && (
-            <p className="text-sm text-white/80 mt-1.5 leading-relaxed">{version.description}</p>
+            <p className="text-sm text-[#3a3340] mt-1.5 leading-relaxed">{version.description}</p>
           )}
 
           <div id={`version-${version.id}-byline`} className="flex items-center gap-3 mt-2">
             <Avatar src={version.profiles?.avatar_url} name={displayName(version.profiles)} size="sm" />
-            <span className="text-xs text-muted">{displayName(version.profiles)}</span>
-            <span className="text-xs text-muted">{timeAgo(version.created_at)}</span>
-            {version.file_size && <span className="text-xs text-muted">{formatBytes(version.file_size)}</span>}
-            {version.duration && <span className="text-xs text-muted">{formatDuration(version.duration)}</span>}
+            <span className="text-xs text-[#6b6275]">{displayName(version.profiles)}</span>
+            <span className="text-xs text-[#6b6275]">{timeAgo(version.created_at)}</span>
+            {version.file_size && <span className="text-xs text-[#6b6275]">{formatBytes(version.file_size)}</span>}
+            {version.duration && <span className="text-xs text-[#6b6275]">{formatDuration(version.duration)}</span>}
           </div>
         </div>
       </div>

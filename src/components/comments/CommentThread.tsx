@@ -15,12 +15,12 @@ export function CommentThread({ versionId, projectId, members }: CommentThreadPr
 
   return (
     <div id={`comment-thread-${versionId}`} className="space-y-3">
-      <h3 className="text-sm font-semibold text-white">Comments &amp; tasks</h3>
+      <h3 className="text-sm font-semibold text-[#1a1620]">Comments &amp; tasks</h3>
 
       {loading ? (
         <div className="flex justify-center py-4"><Spinner /></div>
       ) : comments.length === 0 ? (
-        <p className="text-xs text-muted py-1">No comments yet. Add one below.</p>
+        <p className="text-xs text-[#6b6275] py-1">No comments yet. Add one below.</p>
       ) : (
         <div id={`comment-list-${versionId}`} className="space-y-3">
           {comments.map((c) => (

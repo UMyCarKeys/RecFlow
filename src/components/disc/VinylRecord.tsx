@@ -36,16 +36,16 @@ export function VinylRecord({ tracks, projectName, onSelect }: VinylRecordProps)
         {/* Rotating vinyl body + grooves */}
         <svg viewBox="0 0 100 100" className="absolute inset-0 animate-[spin_120s_linear_infinite]">
           <defs>
-            <radialGradient id="vinylBody" cx="42%" cy="38%" r="72%">
-              <stop offset="0%" stopColor="#221d28" />
-              <stop offset="55%" stopColor="#120f17" />
-              <stop offset="100%" stopColor="#08060c" />
+            <radialGradient id="vinylBody" cx="40%" cy="36%" r="72%">
+              <stop offset="0%" stopColor="#f3ecf1" />
+              <stop offset="55%" stopColor="#e2d6e0" />
+              <stop offset="100%" stopColor="#cfc0cd" />
             </radialGradient>
           </defs>
           <circle cx="50" cy="50" r="49" fill="url(#vinylBody)" />
           {Array.from({ length: 36 }).map((_, i) => {
             const r = LABEL_R + (i / 36) * (OUTER_R - LABEL_R)
-            return <circle key={i} cx="50" cy="50" r={r} fill="none" stroke="#ffffff" strokeOpacity="0.035" strokeWidth="0.25" />
+            return <circle key={i} cx="50" cy="50" r={r} fill="none" stroke="#000000" strokeOpacity="0.05" strokeWidth="0.25" />
           })}
         </svg>
 
@@ -68,7 +68,7 @@ export function VinylRecord({ tracks, projectName, onSelect }: VinylRecordProps)
               >
                 <circle
                   cx="50" cy="50" r={rc} fill="none"
-                  stroke="#ffffff" strokeOpacity={isH ? 0.2 : 0.1} strokeWidth={w}
+                  stroke="#000000" strokeOpacity={isH ? 0.16 : 0.08} strokeWidth={w}
                   style={{ pointerEvents: 'none' }}
                 />
                 <circle
@@ -107,13 +107,13 @@ export function VinylRecord({ tracks, projectName, onSelect }: VinylRecordProps)
           initial={false}
           animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 6 }}
           transition={{ duration: 0.2 }}
-          className="px-4 py-2 rounded-full glass-strong border border-white/10 flex items-center gap-2.5"
+          className="px-4 py-2 rounded-full glass-light border border-black/10 flex items-center gap-2.5"
         >
           {hovered && (
             <>
               <span className="w-2 h-2 rounded-full" style={{ background: trackHue(hovered.id) }} />
-              <span className="text-sm text-white font-medium">{hovered.title}</span>
-              <span className="text-xs text-muted">{STAGE_LABEL[hovered.stage]}</span>
+              <span className="text-sm text-[#1a1620] font-medium">{hovered.title}</span>
+              <span className="text-xs text-[#6b6275]">{STAGE_LABEL[hovered.stage]}</span>
             </>
           )}
         </motion.div>

@@ -62,4 +62,13 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
+  /* Frosted light card + field surfaces for content on the bright background */
+  .card-glass {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  }
+  .field-glass {
+    background: rgba(255, 255, 255, 0.62);
+  }
 }
