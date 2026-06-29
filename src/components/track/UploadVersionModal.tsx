@@ -6,6 +6,9 @@ import { getUploadUrl } from '@/lib/r2'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
+// Lossless/large formats worth compressing; the heavy encoder loads on demand.
+const LOSSLESS = /wav|aif|aiff|flac/i
+
 interface UploadVersionModalProps {
   open: boolean
   onClose: () => void
@@ -25,6 +28,8 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
   const [variant, setVariant] = useState('')
   const [progress, setProgress] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [compressPct, setCompressPct] = useState(0)
   const [error, setError] = useState('')
 
   const addTag = () => {
@@ -40,13 +45,28 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
     setError('')
 
     try {
-      const { uploadUrl, audioKey } = await getUploadUrl(trackId, file.name, file.type)
+      // Shrink large lossless uploads to MP3 before sending (encoder lazy-loaded)
+      let uploadFile = file
+      if (LOSSLESS.test(file.type) || LOSSLESS.test(file.name)) {
+        setCompressing(true)
+        try {
+          const { compressToMp3 } = await import('@/lib/compressAudio')
+          const compressed = await compressToMp3(file, (p) => setCompressPct(Math.round(p * 100)))
+          if (compressed.size < file.size) uploadFile = compressed
+        } catch (err) {
+          console.warn('[upload] compression failed, using original:', err)
+        } finally {
+          setCompressing(false)
+        }
+      }
+
+      const { uploadUrl, audioKey } = await getUploadUrl(trackId, uploadFile.name, uploadFile.type)
 
       setProgress(10)
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
+        headers: { 'Content-Type': uploadFile.type },
+        body: uploadFile,
       })
       if (!uploadRes.ok) throw new Error('Upload to R2 failed')
       setProgress(80)
@@ -54,8 +74,8 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
       const { error: dbErr } = await supabase.from('versions').insert({
         track_id: trackId,
         audio_key: audioKey,
-        file_name: file.name,
-        file_size: file.size,
+        file_name: uploadFile.name,
+        file_size: uploadFile.size,
         duration: null,
         description: description.trim() || null,
         tags,
@@ -72,6 +92,7 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         setTags([])
         setVariant('')
         setProgress(0)
+        setCompressPct(0)
         onUploaded()
         onClose()
       }, 300)
@@ -151,6 +172,15 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
           )}
         </div>
 
+        {compressing && (
+          <div className="space-y-1">
+            <p className="text-xs text-muted">Compressing audio… {compressPct}%</p>
+            <div className="h-1 bg-surface-3 rounded-full overflow-hidden">
+              <div className="h-full bg-spectrum transition-all" style={{ width: `${compressPct}%` }} />
+            </div>
+          </div>
+        )}
+
         {progress > 0 && progress < 100 && (
           <div id="upload-progress" className="h-1 bg-surface-3 rounded-full overflow-hidden">
             <div id="upload-progress-bar" className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
@@ -161,7 +191,9 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
 
         <div id="upload-actions" className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={!file || loading}>{loading ? 'Uploading…' : 'Upload version'}</Button>
+          <Button type="submit" disabled={!file || loading}>
+            {compressing ? 'Compressing…' : loading ? 'Uploading…' : 'Upload version'}
+          </Button>
         </div>
       </form>
     </Modal>
