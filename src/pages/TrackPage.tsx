@@ -13,6 +13,8 @@ import { IdeaBoard } from '@/components/track/IdeaBoard'
 import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { CompareLines } from '@/components/track/CompareLines'
+import { GifPicker } from '@/components/track/GifPicker'
+import { GifPostit } from '@/components/track/GifPostit'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -34,6 +36,7 @@ export function TrackPage() {
   const [archiveConfirm, setArchiveConfirm] = useState(false)
   const [commitTarget, setCommitTarget] = useState<TrackStage | null>(null)
   const [keepVariant, setKeepVariant] = useState<string | null>(null)
+  const [gifPickerOpen, setGifPickerOpen] = useState(false)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(2), [setDepth])
@@ -140,6 +143,20 @@ export function TrackPage() {
         </div>
 
         <div id="track-right-panel" className="flex-1 overflow-y-auto p-6 space-y-8">
+          {(track.gif_url || canEdit) && (
+            <div className="flex justify-end">
+              {track.gif_url ? (
+                <GifPostit
+                  url={track.gif_url}
+                  canEdit={canEdit}
+                  onChange={() => setGifPickerOpen(true)}
+                  onRemove={() => updateTrack({ gif_url: null })}
+                />
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => setGifPickerOpen(true)}>+ Add GIF</Button>
+              )}
+            </div>
+          )}
           {track.stage === 'idea' && (
             <IdeaBoard ideas={track.links} onChange={(ideas) => updateTrack({ links: ideas })} />
           )}
@@ -165,6 +182,8 @@ export function TrackPage() {
         trackId={trackId}
         onUploaded={() => setUploadOpen(false)}
       />
+
+      <GifPicker open={gifPickerOpen} onClose={() => setGifPickerOpen(false)} onPick={(url) => updateTrack({ gif_url: url })} />
 
       <ConfirmDialog
         open={archiveConfirm}

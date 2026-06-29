@@ -111,4 +111,5 @@ export const DEMO_RECORD_TRACKS: Track[] = DEMO_TRACKS.map((t) => ({
   links: [],
   archived: false,
   title_history: [],
+  gif_url: null,
 }))

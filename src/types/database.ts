@@ -58,6 +58,7 @@ export interface Track {
   links: { url: string; label: string; text?: string; at?: string }[]
   archived: boolean
   title_history: NameHistoryEntry[]
+  gif_url: string | null
 }
 
 export interface Version {
