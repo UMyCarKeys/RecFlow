@@ -65,5 +65,11 @@ export function useProject(projectId: string) {
     return { error }
   }
 
-  return { project, members, loading, addMember, updateMemberRole, removeMember }
+  const updateProject = async (updates: Partial<Pick<Project, 'name' | 'description' | 'cover_url' | 'name_history'>>) => {
+    const { data, error } = await supabase.from('projects').update(updates).eq('id', projectId).select().single()
+    if (!error && data) setProject(data as Project)
+    return { error }
+  }
+
+  return { project, members, loading, addMember, updateMemberRole, removeMember, updateProject }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
@@ -6,14 +6,16 @@ import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
 import { VinylRecord } from '@/components/disc/VinylRecord'
 import { MembersModal } from '@/components/project/MembersModal'
+import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
+import { uploadCover } from '@/lib/uploadCover'
 import type { Track } from '@/types/database'
 
 export function ProjectPage() {
   const { id = '' } = useParams()
-  const { project, members, loading: projLoading, addMember, updateMemberRole, removeMember } = useProject(id)
+  const { project, members, loading: projLoading, addMember, updateMemberRole, removeMember, updateProject } = useProject(id)
   const { tracks, loading: tracksLoading, addTrack } = useTracks(id)
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -21,9 +23,34 @@ export function ProjectPage() {
   const [newTrackTitle, setNewTrackTitle] = useState('')
   const [selecting, setSelecting] = useState<Track | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [coverBusy, setCoverBusy] = useState(false)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(1), [setDepth])
+
+  const isOwner = !!user && !!project && project.owner_id === user.id
+
+  const handleRename = (name: string) => {
+    if (!project) return
+    const history = [...(project.name_history ?? []), { name: project.name, at: new Date().toISOString() }]
+    updateProject({ name, name_history: history })
+  }
+
+  const handleCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !project) return
+    setCoverBusy(true)
+    try {
+      const url = await uploadCover(project.id, file)
+      await updateProject({ cover_url: url })
+    } catch (err) {
+      console.error('[cover] upload failed:', err)
+    } finally {
+      setCoverBusy(false)
+      if (coverInputRef.current) coverInputRef.current.value = ''
+    }
+  }
 
   const handleAddTrack = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,11 +76,25 @@ export function ProjectPage() {
     <div id="project-page" className="h-full flex flex-col">
       <div id="project-header" className="p-6 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div id="project-title">
-            <h1 className="text-2xl font-light tracking-wide text-white">{project.name}</h1>
+          <div id="project-title" className="min-w-0">
+            <EditableTitle
+              value={project.name}
+              history={project.name_history ?? []}
+              canEdit={isOwner}
+              onSave={handleRename}
+              className="text-2xl font-light tracking-wide text-white"
+            />
             {project.description && <p className="text-muted text-sm mt-1 font-light">{project.description}</p>}
           </div>
           <div className="flex items-center gap-2">
+            {isOwner && (
+              <>
+                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCover} />
+                <Button variant="ghost" size="sm" disabled={coverBusy} onClick={() => coverInputRef.current?.click()}>
+                  {coverBusy ? 'Uploading…' : 'Cover'}
+                </Button>
+              </>
+            )}
             <Button variant="ghost" size="sm" onClick={() => setMembersOpen(true)}>
               Members{members.length > 0 ? ` · ${members.length}` : ''}
             </Button>

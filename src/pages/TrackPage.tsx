@@ -12,9 +12,11 @@ import { StageProgress } from '@/components/track/StageProgress'
 import { IdeaBoard } from '@/components/track/IdeaBoard'
 import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
+import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useAuth } from '@/hooks/useAuth'
 import { trackHue } from '@/lib/trackColor'
 import type { Version, TrackStage } from '@/types/database'
 
@@ -23,12 +25,22 @@ export function TrackPage() {
   const { track, loading: trackLoading, updateTrack } = useTrack(trackId)
   const { versions, loading: versionsLoading, addVersion } = useVersions(trackId)
   const { members } = useProject(projectId)
+  const { user } = useAuth()
   const [uploadOpen, setUploadOpen] = useState(false)
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
   const [archiveConfirm, setArchiveConfirm] = useState(false)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(2), [setDepth])
+
+  const myRole = members.find((m) => m.user_id === user?.id)?.role
+  const canEdit = myRole === 'owner' || myRole === 'contributor'
+
+  const handleRename = (title: string) => {
+    if (!track) return
+    const history = [...(track.title_history ?? []), { name: track.title, at: new Date().toISOString() }]
+    updateTrack({ title, title_history: history })
+  }
 
   useRealtimeVersions(trackId, (v: Version) => addVersion(v))
 
@@ -52,9 +64,15 @@ export function TrackPage() {
         <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-muted mb-3">
           <Link to={`/project/${projectId}`} className="hover:text-white transition-colors">← Back to album</Link>
         </div>
-        <div id="track-title-row" className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-light tracking-wide text-white">{track.title}</h1>
-          <div className="flex items-center gap-2">
+        <div id="track-title-row" className="flex items-center justify-between gap-3 mb-4">
+          <EditableTitle
+            value={track.title}
+            history={track.title_history ?? []}
+            canEdit={canEdit}
+            onSave={handleRename}
+            className="text-2xl font-light tracking-wide text-white"
+          />
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={() => (track.archived ? updateTrack({ archived: false }) : setArchiveConfirm(true))}>
               {track.archived ? 'Restore' : 'Archive'}
             </Button>

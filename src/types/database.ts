@@ -20,6 +20,11 @@ export interface Profile {
   updated_at: string
 }
 
+export interface NameHistoryEntry {
+  name: string
+  at: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -28,6 +33,7 @@ export interface Project {
   owner_id: string
   created_at: string
   updated_at: string
+  name_history: NameHistoryEntry[]
 }
 
 export interface ProjectMember {
@@ -51,6 +57,7 @@ export interface Track {
   notes: string | null
   links: { url: string; label: string }[]
   archived: boolean
+  title_history: NameHistoryEntry[]
 }
 
 export interface Version {
