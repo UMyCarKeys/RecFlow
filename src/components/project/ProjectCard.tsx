@@ -75,8 +75,8 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
                 {spec.marks.map((m, i) => (
                   <div
                     key={i}
-                    className={`absolute ${CORNER_POS[m.corner]} text-ink/55`}
-                    style={{ transform: `rotate(${m.rot}deg) scale(${m.scale})` }}
+                    className={`absolute ${CORNER_POS[m.corner]}`}
+                    style={{ transform: `rotate(${m.rot}deg) scale(${m.scale})`, color: m.color, opacity: 0.72 }}
                   >
                     <MarkGlyph id={m.id} code={spec.code} />
                   </div>
@@ -122,12 +122,30 @@ function MarkGlyph({ id, code }: { id: MarkId; code: string }) {
         </svg>
       )
     case 'ce':
-      return <span className="text-[11px] font-extrabold tracking-tighter">CE</span>
-    case 'reg':
       return (
-        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
-          <circle cx="8" cy="8" r="4" />
-          <path d="M8 0v16M0 8h16" />
+        <svg viewBox="0 0 24 16" className="h-4" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M11 3 A5 5 0 1 0 11 13" />
+          <path d="M4 8 H9" />
+          <path d="M22 3 A5 5 0 1 0 22 13" />
+          <path d="M15 8 H20" />
+        </svg>
+      )
+    case 'fcc':
+      return <span className="text-[10px] font-extrabold tracking-tight">FCC</span>
+    case 'ccc':
+      return (
+        <svg viewBox="0 0 28 16" className="h-4" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <path d="M9 3 A5 5 0 1 0 9 13" />
+          <path d="M16 3 A5 5 0 1 0 16 13" />
+          <path d="M23 3 A5 5 0 1 0 23 13" />
+        </svg>
+      )
+    case 'e9':
+      return (
+        <svg viewBox="0 0 22 16" className="h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="6" cy="8" r="5" />
+          <text x="6" y="10.5" fontSize="6.5" textAnchor="middle" fill="currentColor" stroke="none">E</text>
+          <text x="16" y="11" fontSize="8" textAnchor="middle" fill="currentColor" stroke="none" fontWeight="700">9</text>
         </svg>
       )
     case 'hazard':
@@ -136,6 +154,19 @@ function MarkGlyph({ id, code }: { id: MarkId; code: string }) {
           <path d="M9 1.5 L16.5 14.5 H1.5 Z" strokeLinejoin="round" />
           <path d="M9 6v4" strokeLinecap="round" />
           <circle cx="9" cy="12" r="0.4" fill="currentColor" />
+        </svg>
+      )
+    case 'caution':
+      return (
+        <span className="inline-flex items-center gap-1 text-[6px] font-bold tracking-[0.16em] border border-current rounded-[2px] px-1 leading-[1.7]">
+          ▲ CAUTION ▲
+        </span>
+      )
+    case 'reg':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="8" cy="8" r="4" />
+          <path d="M8 0v16M0 8h16" />
         </svg>
       )
     case 'globe':
@@ -158,6 +189,53 @@ function MarkGlyph({ id, code }: { id: MarkId; code: string }) {
       return <span className="text-[8px] font-extrabold tracking-[0.22em]">STEREO</span>
     case 'seihin':
       return <span className="text-[11px] font-semibold leading-none">製品</span>
+    case 'sizes':
+      return (
+        <div className="flex gap-[2px]">
+          {['S', 'M', 'L', 'XL'].map((s) => (
+            <span key={s} className="text-[6px] font-semibold border border-current rounded-[1px] px-[2px] leading-[1.5]">
+              {s}
+            </span>
+          ))}
+        </div>
+      )
+    case 'iospec':
+      return (
+        <div className="border border-current rounded-[2px] px-1 py-[1px] font-mono text-[6px] leading-[1.5]">
+          <div>IN 12V</div>
+          <div>OUT 3A</div>
+        </div>
+      )
+    case 'prohibit':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.3">
+          <circle cx="8" cy="8" r="6" />
+          <path d="M3.8 3.8 L12.2 12.2" />
+        </svg>
+      )
+    case 'copyright':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="8" cy="8" r="6.5" />
+          <text x="8" y="11" fontSize="8" textAnchor="middle" fill="currentColor" stroke="none" fontWeight="700">P</text>
+        </svg>
+      )
+    case 'halftone':
+      return (
+        <svg viewBox="0 0 24 16" className="w-6 h-4" fill="currentColor">
+          {Array.from({ length: 6 }).flatMap((_, row) =>
+            Array.from({ length: 9 }).map((__, col) => (
+              <circle key={`${row}-${col}`} cx={col * 2.6 + 1.5} cy={row * 2.6 + 1.5} r={(row + col) % 3 ? 0.6 : 1.1} />
+            )),
+          )}
+        </svg>
+      )
+    case 'download':
+      return (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 1 v8 M5 6 l3 3 3-3 M2 13 h12" />
+        </svg>
+      )
     case 'code':
     default:
       return <span className="font-mono text-[8px] tracking-wide">{code}</span>

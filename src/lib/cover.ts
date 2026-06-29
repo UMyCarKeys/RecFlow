@@ -30,13 +30,23 @@ const HUES = ['#ff8a6b', '#ffc46b', '#ff6b9d', '#b88cff', '#ff9e7d', '#ffd27d', 
 export type MarkId =
   | 'barcode'
   | 'ce'
-  | 'reg'
+  | 'fcc'
+  | 'ccc'
+  | 'e9'
   | 'hazard'
+  | 'caution'
+  | 'reg'
   | 'globe'
   | 'colorbars'
   | 'stereo'
-  | 'code'
   | 'seihin'
+  | 'code'
+  | 'sizes'
+  | 'iospec'
+  | 'prohibit'
+  | 'copyright'
+  | 'halftone'
+  | 'download'
 
 export type Corner = 'tl' | 'tr' | 'bl' | 'br'
 
@@ -45,6 +55,7 @@ export interface CoverMark {
   corner: Corner
   rot: number
   scale: number
+  color: string
 }
 
 export interface CoverBlob {
@@ -64,9 +75,14 @@ export interface CoverSpec {
   discTilt: number
 }
 
-const ALL_MARKS: MarkId[] = ['barcode', 'ce', 'reg', 'hazard', 'globe', 'colorbars', 'stereo', 'code', 'seihin']
+const ALL_MARKS: MarkId[] = [
+  'barcode', 'ce', 'fcc', 'ccc', 'e9', 'hazard', 'caution', 'reg', 'globe',
+  'colorbars', 'stereo', 'seihin', 'code', 'sizes', 'iospec', 'prohibit',
+  'copyright', 'halftone', 'download',
+]
 const CORNERS: Corner[] = ['tl', 'tr', 'bl', 'br']
 const CODE_LETTERS = 'ABCDEFGHJKLMNPRSTUVXZ'
+const INK = '#f4ece8'
 
 export function coverSpec(id: string): CoverSpec {
   const rnd = mulberry32(hashStr(id))
@@ -103,12 +119,17 @@ export function coverSpec(id: string): CoverSpec {
     const j = Math.floor(rnd() * (i + 1))
     ;[cornersShuffled[i], cornersShuffled[j]] = [cornersShuffled[j], cornersShuffled[i]]
   }
-  const count = 2 + Math.floor(rnd() * 3)
+  // Palette of the cover's own colors, used to tint some marks
+  const palette = Array.from(new Set(blobs.map((b) => b.color)))
+  const markColor = () => (rnd() < 0.5 ? INK : palette[Math.floor(rnd() * palette.length)])
+
+  const count = 3 + Math.floor(rnd() * 2) // 3..4
   const marks: CoverMark[] = Array.from({ length: count }, (_, i) => ({
     id: marksShuffled[i],
     corner: cornersShuffled[i % cornersShuffled.length],
     rot: Math.round(rnd() * 16 - 8),
     scale: 0.85 + rnd() * 0.3,
+    color: markColor(),
   }))
 
   return {
