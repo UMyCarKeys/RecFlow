@@ -51,7 +51,7 @@ export function EditableTitle({ value, history, canEdit, onSave, className = '' 
             setEditing(true)
           }}
           title="Rename"
-          className="text-muted hover:text-white transition-colors opacity-0 group-hover/title:opacity-100 flex-shrink-0"
+          className="text-[#9a8fa3] hover:text-[#1a1620] transition-colors opacity-0 group-hover/title:opacity-100 flex-shrink-0"
         >
           <PencilIcon />
         </button>
@@ -69,12 +69,12 @@ export function EditableTitle({ value, history, canEdit, onSave, className = '' 
           {showHistory && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowHistory(false)} />
-              <div className="absolute left-0 mt-2 w-60 rounded-xl glass-strong border border-white/[0.08] shadow-xl p-2 z-50">
-                <p className="px-2 py-1 text-xs font-semibold text-muted uppercase tracking-wide">Previous names</p>
+              <div className="absolute left-0 mt-2 w-60 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
+                <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">Previous names</p>
                 {[...history].reverse().map((h, i) => (
                   <div key={i} className="px-2 py-1.5 flex items-center justify-between gap-2">
-                    <span className="text-sm text-ink/85 truncate">{h.name}</span>
-                    <span className="text-[10px] text-muted flex-shrink-0">{timeAgo(h.at)}</span>
+                    <span className="text-sm text-[#1a1620] truncate">{h.name}</span>
+                    <span className="text-[10px] text-[#9a8fa3] flex-shrink-0">{timeAgo(h.at)}</span>
                   </div>
                 ))}
               </div>

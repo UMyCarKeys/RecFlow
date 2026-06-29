@@ -76,7 +76,7 @@ export function TopBar() {
         <div ref={bellRef} className="relative">
           <button
             onClick={() => setBellOpen((v) => !v)}
-            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/[0.06] transition-colors"
+            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/[0.05] transition-colors"
             title="Tasks assigned to you"
           >
             <BellIcon active={count > 0} />
@@ -87,17 +87,17 @@ export function TopBar() {
             )}
           </button>
           {bellOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-xl glass-strong border border-white/[0.08] shadow-xl p-2 z-50">
-              <p className="px-2 py-1 text-xs font-semibold text-muted uppercase tracking-wide">Assigned to you</p>
+            <div className="absolute right-0 mt-2 w-72 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
+              <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">Assigned to you</p>
               {tasks.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-muted">Nothing outstanding.</p>
+                <p className="px-2 py-2 text-xs text-[#6b6275]">Nothing outstanding.</p>
               ) : (
                 tasks.map((t) => (
                   <Link
                     key={t.id}
                     to={`/project/${t.project_id}/track/${t.track_id}`}
                     onClick={() => setBellOpen(false)}
-                    className="block px-2 py-2 rounded-lg text-sm text-ink/85 hover:bg-white/[0.06] transition-colors truncate"
+                    className="block px-2 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors truncate"
                   >
                     {t.title}
                   </Link>
@@ -112,7 +112,7 @@ export function TopBar() {
         <button
           id="top-bar-user"
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-2.5 rounded-full pl-1 pr-3 py-1 hover:bg-white/[0.06] transition-colors"
+          className="flex items-center gap-2.5 rounded-full pl-1 pr-3 py-1 hover:bg-black/[0.05] transition-colors"
         >
           <Avatar name={displayName} size="sm" />
           <span className="text-sm text-[#1a1620] max-w-0 group-hover/topbar:max-w-[160px] overflow-hidden whitespace-nowrap transition-[max-width] duration-300">
@@ -121,7 +121,7 @@ export function TopBar() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-56 rounded-xl glass-strong border border-white/[0.08] shadow-xl p-2 z-50">
+          <div className="absolute right-0 mt-2 w-56 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
             {editing ? (
               <input
                 value={nameInput}
@@ -133,19 +133,19 @@ export function TopBar() {
                 }}
                 autoFocus
                 placeholder="Display name"
-                className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
+                className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent"
               />
             ) : (
               <button
                 onClick={startEdit}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm text-ink/80 hover:bg-white/[0.06] transition-colors"
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors"
               >
                 Edit display name
               </button>
             )}
             <button
               onClick={signOut}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-accent-rose hover:bg-white/[0.06] transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-accent-rose hover:bg-black/[0.05] transition-colors"
             >
               Sign out
             </button>

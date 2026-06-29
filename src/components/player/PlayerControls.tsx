@@ -11,7 +11,7 @@ export function PlayerControls() {
       className="flex items-center gap-3 flex-shrink-0"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <span className="text-xs text-muted tabular-nums">{formatDuration(progress)}</span>
+      <span className="text-xs text-[#6b6275] tabular-nums">{formatDuration(progress)}</span>
 
       <button
         onClick={() => setIsPlaying(!isPlaying)}
@@ -28,7 +28,7 @@ export function PlayerControls() {
         )}
       </button>
 
-      <span className="text-xs text-muted tabular-nums">{formatDuration(duration)}</span>
+      <span className="text-xs text-[#6b6275] tabular-nums">{formatDuration(duration)}</span>
     </div>
   )
 }

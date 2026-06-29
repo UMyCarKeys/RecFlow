@@ -195,7 +195,7 @@ export function TrackPage() {
       />
 
       <Modal open={commitTarget !== null} onClose={() => setCommitTarget(null)} title="Commit to one direction">
-        <p className="text-sm text-muted leading-relaxed">
+        <p className="text-sm text-[#6b6275] leading-relaxed">
           Moving past Mix means choosing the line to carry forward. The other lines will be set aside — you won't lose
           them, but they leave the active record so the project keeps moving.
         </p>
@@ -207,12 +207,12 @@ export function TrackPage() {
                 key={line.label}
                 onClick={() => setKeepVariant(line.variant)}
                 className={`w-full flex items-center gap-2 p-2.5 rounded-lg border transition-colors ${
-                  active ? 'border-accent bg-accent/10' : 'border-white/10 hover:border-white/20'
+                  active ? 'border-accent bg-accent/10' : 'border-black/10 hover:border-black/20'
                 }`}
               >
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: variantHue(line.variant) }} />
-                <span className="text-sm text-white flex-1 text-left truncate">{line.label}</span>
-                <span className="text-xs text-muted">v{line.latest.version_number}</span>
+                <span className="text-sm text-[#1a1620] flex-1 text-left truncate">{line.label}</span>
+                <span className="text-xs text-[#6b6275]">v{line.latest.version_number}</span>
               </button>
             )
           })}

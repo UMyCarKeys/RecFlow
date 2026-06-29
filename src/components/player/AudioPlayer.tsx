@@ -13,9 +13,9 @@ export function AudioPlayer() {
 
     const ws = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: 'rgba(124, 106, 240, 0.4)',
-      progressColor: '#7c6af0',
-      cursorColor: '#9b8ef5',
+      waveColor: 'rgba(122, 109, 128, 0.35)',
+      progressColor: '#ff8a6b',
+      cursorColor: '#ff6b9d',
       height: 40,
       barWidth: 2,
       barGap: 1,

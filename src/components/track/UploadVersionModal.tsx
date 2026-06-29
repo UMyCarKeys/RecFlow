@@ -109,14 +109,14 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         <div
           id="upload-dropzone"
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-white/10 hover:border-accent/40 rounded-xl p-6 text-center cursor-pointer transition-colors"
+          className="border-2 border-dashed border-black/15 hover:border-accent/50 rounded-xl p-6 text-center cursor-pointer transition-colors"
         >
           {file ? (
-            <p className="text-sm text-white">{file.name} <span className="text-muted">({(file.size / 1024 / 1024).toFixed(1)} MB)</span></p>
+            <p className="text-sm text-[#1a1620]">{file.name} <span className="text-[#6b6275]">({(file.size / 1024 / 1024).toFixed(1)} MB)</span></p>
           ) : (
             <>
-              <p className="text-sm text-muted">Drop your audio file here, or click to browse</p>
-              <p className="text-xs text-muted/60 mt-1">MP3, WAV, AIFF, FLAC</p>
+              <p className="text-sm text-[#6b6275]">Drop your audio file here, or click to browse</p>
+              <p className="text-xs text-[#9a8fa3] mt-1">MP3, WAV, AIFF, FLAC</p>
             </>
           )}
           <input
@@ -133,28 +133,28 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
         </div>
 
         <div id="upload-description">
-          <label className="block text-xs text-muted mb-1">What changed? (optional)</label>
+          <label className="block text-xs text-[#6b6275] mb-1">What changed? (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="e.g. Reworked the bridge, new vocal take on chorus 2"
-            className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent resize-none"
+            className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent resize-none"
           />
         </div>
 
         <div id="upload-variant">
-          <label className="block text-xs text-muted mb-1">Line / variant (optional)</label>
+          <label className="block text-xs text-[#6b6275] mb-1">Line / variant (optional)</label>
           <input
             value={variant}
             onChange={(e) => setVariant(e.target.value)}
             placeholder="e.g. Warm take, Aggressive take — leave blank for the main line"
-            className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
+            className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent"
           />
         </div>
 
         <div id="upload-tags">
-          <label className="block text-xs text-muted mb-1">Tags</label>
+          <label className="block text-xs text-[#6b6275] mb-1">Tags</label>
           <div className="flex gap-2">
             <input
               value={tagInput}
@@ -174,15 +174,15 @@ export function UploadVersionModal({ open, onClose, trackId, onUploaded }: Uploa
 
         {compressing && (
           <div className="space-y-1">
-            <p className="text-xs text-muted">Compressing audio… {compressPct}%</p>
-            <div className="h-1 bg-surface-3 rounded-full overflow-hidden">
+            <p className="text-xs text-[#6b6275]">Compressing audio… {compressPct}%</p>
+            <div className="h-1 bg-black/10 rounded-full overflow-hidden">
               <div className="h-full bg-spectrum transition-all" style={{ width: `${compressPct}%` }} />
             </div>
           </div>
         )}
 
         {progress > 0 && progress < 100 && (
-          <div id="upload-progress" className="h-1 bg-surface-3 rounded-full overflow-hidden">
+          <div id="upload-progress" className="h-1 bg-black/10 rounded-full overflow-hidden">
             <div id="upload-progress-bar" className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}

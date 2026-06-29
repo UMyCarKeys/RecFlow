@@ -37,22 +37,22 @@ export function CreateProjectModal({ open, onClose, onCreated }: CreateProjectMo
     <Modal open={open} onClose={onClose} title="New Album Project">
       <form id="create-project-form" onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs text-muted mb-1">Project name</label>
+          <label className="block text-xs text-[#6b6275] mb-1">Project name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Midnight Sessions Vol. 2"
-            className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
+            className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent"
             required
           />
         </div>
         <div>
-          <label className="block text-xs text-muted mb-1">Description (optional)</label>
+          <label className="block text-xs text-[#6b6275] mb-1">Description (optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent resize-none"
+            className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent resize-none"
           />
         </div>
         {error && <p className="text-xs text-red-400">{error}</p>}

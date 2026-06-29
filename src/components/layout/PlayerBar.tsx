@@ -24,11 +24,11 @@ export function PlayerBar() {
   return (
     <div
       id="player-bar"
-      className="group/player fixed bottom-0 left-0 right-0 h-14 glass border-t border-white/[0.06] flex items-center px-4 gap-3 z-40"
+      className="group/player fixed bottom-0 left-0 right-0 h-14 glass-light border-t border-black/[0.06] flex items-center px-4 gap-3 z-40"
     >
       {/* Load status bar — confirms work is happening after pressing play */}
       {isLoading && (
-        <div id="player-bar-status" className="absolute top-0 left-0 right-0 h-[3px] bg-white/10 overflow-hidden">
+        <div id="player-bar-status" className="absolute top-0 left-0 right-0 h-[3px] bg-black/10 overflow-hidden">
           {loadPhase === 'download' && loadProgress > 0 ? (
             <div className="h-full bg-spectrum transition-[width] duration-150" style={{ width: `${pct}%` }} />
           ) : (
@@ -38,15 +38,15 @@ export function PlayerBar() {
       )}
 
       <div id="player-bar-track-info" className="flex-shrink-0 min-w-0 w-32">
-        <p className={`text-[11px] truncate ${isLoading ? 'text-accent' : 'text-muted'}`}>{statusLabel}</p>
-        <p className="text-sm text-white font-medium truncate">{activeTrackTitle}</p>
+        <p className={`text-[11px] truncate ${isLoading ? 'text-accent' : 'text-[#6b6275]'}`}>{statusLabel}</p>
+        <p className="text-sm text-[#1a1620] font-medium truncate">{activeTrackTitle}</p>
       </div>
 
       <PlayerControls />
 
       {/* Recessed by default (thin progress line); reveals the waveform on hover */}
       <div className="relative flex-1 mx-1 h-9 flex items-center">
-        <div className="absolute left-0 right-0 h-[3px] rounded-full bg-white/10 opacity-100 group-hover/player:opacity-0 transition-opacity duration-300">
+        <div className="absolute left-0 right-0 h-[3px] rounded-full bg-black/10 opacity-100 group-hover/player:opacity-0 transition-opacity duration-300">
           <div className="h-full rounded-full bg-spectrum" style={{ width: `${playedPct}%` }} />
         </div>
         <div className="absolute inset-0 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none group-hover/player:pointer-events-auto">
@@ -57,7 +57,7 @@ export function PlayerBar() {
       <button
         id="player-bar-close"
         onClick={reset}
-        className="flex-shrink-0 text-muted hover:text-white transition-colors"
+        className="flex-shrink-0 text-[#6b6275] hover:text-[#1a1620] transition-colors"
         aria-label="Close player"
         onContextMenu={(e) => e.preventDefault()}
       >
