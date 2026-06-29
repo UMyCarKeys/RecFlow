@@ -10,10 +10,12 @@ import { VersionCard } from '@/components/track/VersionCard'
 import { UploadVersionModal } from '@/components/track/UploadVersionModal'
 import { StageProgress } from '@/components/track/StageProgress'
 import { IdeaBoard } from '@/components/track/IdeaBoard'
+import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { TaskList } from '@/components/tasks/TaskList'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import { trackHue } from '@/lib/trackColor'
 import type { Version, TrackStage } from '@/types/database'
 
 export function TrackPage() {
@@ -35,8 +37,17 @@ export function TrackPage() {
   if (!track) return <p className="text-muted text-sm p-8">Track not found.</p>
 
   return (
-    <div id="track-page" className="h-full flex flex-col">
-      <div id="track-header" className="p-6 border-b border-white/8 flex-shrink-0">
+    <motion.div
+      id="track-page"
+      className="relative h-full flex flex-col"
+      initial={{ opacity: 0, scale: 1.06 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {/* Deep groove field in the track's color, hovering behind everything */}
+      <GrooveField hue={trackHue(trackId)} glow={!!(track.notes || track.links.length)} />
+
+      <div id="track-header" className="relative z-10 p-6 border-b border-white/8 flex-shrink-0">
         <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-muted mb-3">
           <Link to={`/project/${projectId}`} className="hover:text-white transition-colors">← Back to album</Link>
         </div>
@@ -50,7 +61,7 @@ export function TrackPage() {
         />
       </div>
 
-      <div id="track-split" className="flex-1 overflow-hidden flex">
+      <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex">
         <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-white/8 overflow-y-auto p-4 space-y-3">
           <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">Versions</h2>
           {versionsLoading ? (
@@ -99,6 +110,6 @@ export function TrackPage() {
         trackId={trackId}
         onUploaded={() => setUploadOpen(false)}
       />
-    </div>
+    </motion.div>
   )
 }
