@@ -68,8 +68,8 @@ void main() {
   vec2 center = 0.5 * vec2(aspect, 1.0);
   p = (p - center) * zoom + center;
 
-  float t = u_time * 0.05;
-  vec2 mouseOff = u_mouse * 0.13; // mouse parallax sensitivity
+  float t = u_time * 0.075;       // clearer drift
+  vec2 mouseOff = u_mouse * 0.2;  // clearer reaction to the mouse
 
   // Domain warping for organic, flowing color movement
   vec2 q = vec2(fbm(p + vec2(0.0, t) + mouseOff),
@@ -85,19 +85,19 @@ void main() {
   vec3 rose   = vec3(1.0,   0.42,  0.616); // #ff6b9d
   vec3 violet = vec3(0.722, 0.549, 1.0);   // #b88cff
 
-  // Tint the white with soft color washes
+  // Tint the white with color washes (richer in the colored pockets)
   vec3 col = base;
-  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.45);
-  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.45);
-  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.40);
-  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.42);
+  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.55);
+  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.55);
+  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.48);
+  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.5);
 
-  // Keep it bright (toward white) in the low areas
+  // Keep it bright (toward white) in the low areas — white amount unchanged
   col = mix(base, col, smoothstep(0.0, 0.8, f + 0.25));
 
-  // Gentle saturation lift
+  // Stronger saturation lift so the colored areas pop
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
-  col = mix(vec3(lum), col, 1.22);
+  col = mix(vec3(lum), col, 1.45);
   col = clamp(col, 0.0, 1.0);
 
   // Neon streak accents as soft color tints (read on white)
@@ -204,9 +204,9 @@ export function DepthBackground() {
     const frame = () => {
       const time = ((performance.now() - start) / 1000) * (reduceMotion ? 0.3 : 1)
 
-      // Mouse follow (a touch more responsive)
-      curMouse.x += (targetMouse.x - curMouse.x) * 0.045
-      curMouse.y += (targetMouse.y - curMouse.y) * 0.045
+      // Mouse follow (more responsive so the reaction is clear)
+      curMouse.x += (targetMouse.x - curMouse.x) * 0.06
+      curMouse.y += (targetMouse.y - curMouse.y) * 0.06
 
       const target = useDepthStore.getState().depth
       if (target !== toDepth) {
@@ -245,7 +245,7 @@ export function DepthBackground() {
           left: '-7vw',
           top: '-7vh',
           zIndex: 0,
-          filter: 'blur(54px) saturate(1.12) brightness(1.04)',
+          filter: 'blur(54px) saturate(1.28) brightness(1.04)',
           // CSS fallback shown if WebGL is unavailable, so it never goes flat
           background: 'radial-gradient(circle at 32% 30%, #ffffff, #f1ebef 62%)',
         }}
