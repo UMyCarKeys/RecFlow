@@ -50,6 +50,7 @@ export interface Track {
   stage: TrackStage
   notes: string | null
   links: { url: string; label: string }[]
+  archived: boolean
 }
 
 export interface Version {
@@ -78,12 +79,14 @@ export interface Comment {
   updated_at: string
   profiles?: Profile
   replies?: Comment[]
+  task?: Task | null // attached task, if this comment was turned into one
 }
 
 export interface Task {
   id: string
   version_id: string
   project_id: string
+  comment_id: string | null
   title: string
   body: string | null
   status: TaskStatus

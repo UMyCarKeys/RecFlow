@@ -12,9 +12,9 @@ import { StageProgress } from '@/components/track/StageProgress'
 import { IdeaBoard } from '@/components/track/IdeaBoard'
 import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
-import { TaskList } from '@/components/tasks/TaskList'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { trackHue } from '@/lib/trackColor'
 import type { Version, TrackStage } from '@/types/database'
 
@@ -25,6 +25,7 @@ export function TrackPage() {
   const { members } = useProject(projectId)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
+  const [archiveConfirm, setArchiveConfirm] = useState(false)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(2), [setDepth])
@@ -53,8 +54,21 @@ export function TrackPage() {
         </div>
         <div id="track-title-row" className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-light tracking-wide text-white">{track.title}</h1>
-          <Button onClick={() => setUploadOpen(true)}>Upload version</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => (track.archived ? updateTrack({ archived: false }) : setArchiveConfirm(true))}>
+              {track.archived ? 'Restore' : 'Archive'}
+            </Button>
+            <Button onClick={() => setUploadOpen(true)}>Upload version</Button>
+          </div>
         </div>
+
+        {track.archived && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-surface-3/70 border border-white/10 text-xs text-muted">
+            This track is archived — it won't be used for this project and is excluded from the album's progress. Use
+            <span className="text-white"> Restore</span> to bring it back.
+          </div>
+        )}
+
         <StageProgress
           stage={track.stage}
           onChange={(s: TrackStage) => updateTrack({ stage: s })}
@@ -94,10 +108,7 @@ export function TrackPage() {
             />
           )}
           {selectedVersion ? (
-            <>
-              <CommentThread versionId={selectedVersion.id} />
-              <TaskList versionId={selectedVersion.id} projectId={projectId} members={members} />
-            </>
+            <CommentThread versionId={selectedVersion.id} projectId={projectId} members={members} />
           ) : (
             <p id="track-no-version-hint" className="text-muted text-sm">Select a version or upload one to see comments and tasks.</p>
           )}
@@ -109,6 +120,15 @@ export function TrackPage() {
         onClose={() => setUploadOpen(false)}
         trackId={trackId}
         onUploaded={() => setUploadOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={archiveConfirm}
+        title="Archive this track?"
+        message="It will be hidden from the record and removed from the album's completion calculations. You can restore it anytime."
+        confirmLabel="Archive"
+        onConfirm={() => updateTrack({ archived: true })}
+        onClose={() => setArchiveConfirm(false)}
       />
     </motion.div>
   )

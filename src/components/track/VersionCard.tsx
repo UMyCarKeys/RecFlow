@@ -2,6 +2,7 @@ import { usePlayerStore } from '@/store/playerStore'
 import { Avatar } from '@/components/ui/Avatar'
 import { Tag } from '@/components/ui/Tag'
 import { formatBytes, formatDuration, timeAgo } from '@/lib/utils'
+import { displayName } from '@/lib/displayName'
 import type { Version } from '@/types/database'
 
 interface VersionCardProps {
@@ -57,8 +58,8 @@ export function VersionCard({ version, trackTitle, isLatest }: VersionCardProps)
           )}
 
           <div id={`version-${version.id}-byline`} className="flex items-center gap-3 mt-2">
-            <Avatar src={version.profiles?.avatar_url} name={version.profiles?.username} size="sm" />
-            <span className="text-xs text-muted">{version.profiles?.username}</span>
+            <Avatar src={version.profiles?.avatar_url} name={displayName(version.profiles)} size="sm" />
+            <span className="text-xs text-muted">{displayName(version.profiles)}</span>
             <span className="text-xs text-muted">{timeAgo(version.created_at)}</span>
             {version.file_size && <span className="text-xs text-muted">{formatBytes(version.file_size)}</span>}
             {version.duration && <span className="text-xs text-muted">{formatDuration(version.duration)}</span>}

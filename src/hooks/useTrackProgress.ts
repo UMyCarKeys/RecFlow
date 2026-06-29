@@ -20,6 +20,7 @@ export function useTrackProgress(key: number = 0) {
     supabase
       .from('tracks')
       .select('project_id, stage')
+      .eq('archived', false)
       .then(({ data }) => {
         if (cancelled) return
         const groups: Record<string, number[]> = {}

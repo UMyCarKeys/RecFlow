@@ -31,6 +31,9 @@ export function ProjectPage() {
     setAddingTrack(false)
   }
 
+  const activeTracks = tracks.filter((t) => !t.archived)
+  const archivedCount = tracks.length - activeTracks.length
+
   // Dive into a track: zoom the record up, then navigate
   const handleSelect = (track: Track) => {
     setSelecting(track)
@@ -70,9 +73,9 @@ export function ProjectPage() {
       <div id="project-record" className="flex-1 relative min-h-0">
         {tracksLoading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
-        ) : tracks.length === 0 ? (
+        ) : activeTracks.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-muted text-sm">No tracks yet. Add one above to start the record.</p>
+            <p className="text-muted text-sm">No active tracks yet. Add one above to start the record.</p>
           </motion.div>
         ) : (
           <motion.div
@@ -81,8 +84,12 @@ export function ProjectPage() {
             animate={selecting ? { scale: 2.6, opacity: 0 } : { scale: 1, opacity: 1 }}
             transition={{ duration: selecting ? 0.55 : 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <VinylRecord tracks={tracks} projectName={project.name} onSelect={handleSelect} />
+            <VinylRecord tracks={activeTracks} projectName={project.name} onSelect={handleSelect} />
           </motion.div>
+        )}
+
+        {archivedCount > 0 && (
+          <p className="absolute bottom-3 right-4 text-xs text-muted/70">{archivedCount} archived</p>
         )}
       </div>
     </div>

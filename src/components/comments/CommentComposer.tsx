@@ -1,30 +1,53 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Switch } from '@/components/ui/Switch'
 import { useAuth } from '@/hooks/useAuth'
 import { usePlayerStore } from '@/store/playerStore'
 import { formatDuration } from '@/lib/utils'
+import { displayName } from '@/lib/displayName'
+import type { AddOpts } from '@/hooks/useThread'
+import type { ProjectMember } from '@/types/database'
 
 interface CommentComposerProps {
-  onSubmit: (body: string, authorId: string, parentId?: string, timestampS?: number) => Promise<unknown>
+  onSubmit: (body: string, authorId: string, opts?: AddOpts) => Promise<unknown>
+  members?: ProjectMember[]
   parentId?: string
   placeholder?: string
   onCancel?: () => void
+  showTaskOption?: boolean
 }
 
-export function CommentComposer({ onSubmit, parentId, placeholder = 'Add a comment…', onCancel }: CommentComposerProps) {
+export function CommentComposer({
+  onSubmit,
+  members = [],
+  parentId,
+  placeholder = 'Add a comment…',
+  onCancel,
+  showTaskOption = false,
+}: CommentComposerProps) {
   const { user } = useAuth()
   const { progress, activeVersionId } = usePlayerStore()
   const [body, setBody] = useState('')
-  const [pinTimestamp, setPinTimestamp] = useState(false)
+  const [pin, setPin] = useState(false)
+  const [taskOn, setTaskOn] = useState(false)
+  const [label, setLabel] = useState('')
+  const [assignee, setAssignee] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !body.trim()) return
     setLoading(true)
-    await onSubmit(body.trim(), user.id, parentId, pinTimestamp && activeVersionId ? progress : undefined)
+    await onSubmit(body.trim(), user.id, {
+      parentId,
+      timestampS: pin && activeVersionId ? progress : undefined,
+      task: taskOn ? { label: label.trim(), assigneeId: assignee || null } : undefined,
+    })
     setBody('')
-    setPinTimestamp(false)
+    setPin(false)
+    setTaskOn(false)
+    setLabel('')
+    setAssignee('')
     setLoading(false)
   }
 
@@ -37,18 +60,38 @@ export function CommentComposer({ onSubmit, parentId, placeholder = 'Add a comme
         rows={2}
         className="w-full bg-surface-3 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent resize-none"
       />
-      <div className="flex items-center justify-between">
-        {activeVersionId && !parentId && (
-          <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
-            <input
-              type="checkbox"
-              checked={pinTimestamp}
-              onChange={(e) => setPinTimestamp(e.target.checked)}
-              className="accent-accent"
-            />
-            Pin to {formatDuration(progress)}
-          </label>
-        )}
+
+      {showTaskOption && taskOn && (
+        <div className="flex gap-2">
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Task label (optional)"
+            className="flex-1 bg-surface-3 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent"
+          />
+          <select
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+            className="bg-surface-3 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-accent"
+          >
+            <option value="">Assign…</option>
+            {members.map((m) => (
+              <option key={m.user_id} value={m.user_id}>{displayName(m.profiles)}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          {activeVersionId && !parentId && (
+            <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
+              <input type="checkbox" checked={pin} onChange={(e) => setPin(e.target.checked)} className="accent-accent" />
+              Pin {formatDuration(progress)}
+            </label>
+          )}
+          {showTaskOption && <Switch checked={taskOn} onChange={setTaskOn} label="Task" />}
+        </div>
         <div className="flex items-center gap-2 ml-auto">
           {onCancel && <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
           <Button type="submit" size="sm" disabled={!body.trim() || loading}>

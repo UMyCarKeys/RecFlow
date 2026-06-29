@@ -1,35 +1,43 @@
 import { useState } from 'react'
 import { Avatar } from '@/components/ui/Avatar'
 import { CommentComposer } from './CommentComposer'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { usePlayerStore } from '@/store/playerStore'
+import { useAuth } from '@/hooks/useAuth'
 import { formatDuration, timeAgo } from '@/lib/utils'
-import type { Comment } from '@/types/database'
+import { displayName } from '@/lib/displayName'
+import type { AddOpts } from '@/hooks/useThread'
+import type { Comment, ProjectMember } from '@/types/database'
 
 interface CommentItemProps {
   comment: Comment
-  onReply: (body: string, authorId: string, parentId?: string, timestampS?: number) => Promise<unknown>
+  members: ProjectMember[]
+  onReply: (body: string, authorId: string, opts?: AddOpts) => Promise<unknown>
+  onTaskDone: (taskId: string, done: boolean) => void
+  onDeleteTask: (taskId: string) => void
+  onDeleteComment: (commentId: string) => void
 }
 
-export function CommentItem({ comment, onReply }: CommentItemProps) {
+export function CommentItem({ comment, members, onReply, onTaskDone, onDeleteTask, onDeleteComment }: CommentItemProps) {
   const [replying, setReplying] = useState(false)
+  const [confirm, setConfirm] = useState<null | 'comment' | 'task'>(null)
   const { setProgress, activeVersionId } = usePlayerStore()
+  const { user } = useAuth()
 
-  const handleTimestampClick = () => {
-    if (comment.timestamp_s != null && activeVersionId) {
-      setProgress(comment.timestamp_s)
-    }
-  }
+  const task = comment.task
+  const isAuthor = user?.id === comment.author_id
+  const done = task?.status === 'done'
 
   return (
     <div id={`comment-${comment.id}`} className="space-y-2">
       <div id={`comment-${comment.id}-header`} className="flex gap-3">
-        <Avatar src={comment.profiles?.avatar_url} name={comment.profiles?.username} size="sm" />
-        <div className="flex-1">
+        <Avatar src={comment.profiles?.avatar_url} name={displayName(comment.profiles)} size="sm" />
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-white">{comment.profiles?.username}</span>
+            <span className="text-xs font-semibold text-white">{displayName(comment.profiles)}</span>
             {comment.timestamp_s != null && (
               <button
-                onClick={handleTimestampClick}
+                onClick={() => activeVersionId && setProgress(comment.timestamp_s!)}
                 className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent/20 text-accent-hover hover:bg-accent/30 transition-colors"
               >
                 {formatDuration(comment.timestamp_s)}
@@ -38,33 +46,85 @@ export function CommentItem({ comment, onReply }: CommentItemProps) {
             <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
           </div>
           <p className="text-sm text-white/80 mt-1 leading-relaxed">{comment.body}</p>
-          <button
-            onClick={() => setReplying((v) => !v)}
-            className="text-xs text-muted hover:text-white transition-colors mt-1"
-          >
-            Reply
-          </button>
+
+          {/* Inline task */}
+          {task && (
+            <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-surface-3/70 border border-white/8">
+              <button
+                onClick={() => onTaskDone(task.id, !done)}
+                className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
+                  done ? 'bg-accent border-accent text-white' : 'border-white/30 text-transparent hover:border-accent'
+                }`}
+                title={done ? 'Mark not done' : 'Mark done'}
+              >
+                ✓
+              </button>
+              <span className={`text-xs flex-1 min-w-0 truncate ${done ? 'line-through text-muted' : 'text-white/90'}`}>
+                {task.title}
+              </span>
+              {task.assignee && (
+                <span className="flex items-center gap-1 text-xs text-muted flex-shrink-0">
+                  <Avatar src={task.assignee.avatar_url} name={displayName(task.assignee)} size="sm" />
+                  {displayName(task.assignee)}
+                </span>
+              )}
+              <button onClick={() => setConfirm('task')} className="text-muted hover:text-red-400 transition-colors flex-shrink-0" title="Remove task">
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 mt-1">
+            <button onClick={() => setReplying((v) => !v)} className="text-xs text-muted hover:text-white transition-colors">
+              Reply
+            </button>
+            {isAuthor && (
+              <button onClick={() => setConfirm('comment')} className="text-xs text-muted hover:text-red-400 transition-colors">
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {replying && (
         <div className="ml-10">
-          <CommentComposer
-            onSubmit={onReply}
-            parentId={comment.id}
-            placeholder="Reply…"
-            onCancel={() => setReplying(false)}
-          />
+          <CommentComposer onSubmit={onReply} parentId={comment.id} placeholder="Reply…" onCancel={() => setReplying(false)} />
         </div>
       )}
 
       {comment.replies && comment.replies.length > 0 && (
         <div id={`comment-${comment.id}-replies`} className="ml-10 space-y-3 border-l border-white/8 pl-3">
           {comment.replies.map((r) => (
-            <CommentItem key={r.id} comment={r} onReply={onReply} />
+            <CommentItem
+              key={r.id}
+              comment={r}
+              members={members}
+              onReply={onReply}
+              onTaskDone={onTaskDone}
+              onDeleteTask={onDeleteTask}
+              onDeleteComment={onDeleteComment}
+            />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirm !== null}
+        title={confirm === 'task' ? 'Remove task?' : 'Delete comment?'}
+        message={
+          confirm === 'task'
+            ? 'This removes the task from this comment. The comment stays.'
+            : 'This permanently deletes the comment (and its task, if any).'
+        }
+        confirmLabel={confirm === 'task' ? 'Remove' : 'Delete'}
+        danger
+        onConfirm={() => {
+          if (confirm === 'task' && task) onDeleteTask(task.id)
+          if (confirm === 'comment') onDeleteComment(comment.id)
+        }}
+        onClose={() => setConfirm(null)}
+      />
     </div>
   )
 }

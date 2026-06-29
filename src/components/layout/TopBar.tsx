@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
+import { useMyTasks } from '@/hooks/useMyTasks'
 import { Avatar } from '@/components/ui/Avatar'
 
 export function TopBar() {
   const { user, signOut } = useAuth()
   const { profile, updateProfile } = useProfile()
+  const { tasks, count } = useMyTasks(user?.id)
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
+  const bellRef = useRef<HTMLDivElement>(null)
 
   const displayName = profile?.full_name || profile?.username || user?.email
 
@@ -21,18 +25,21 @@ export function TopBar() {
       ? 'Album'
       : 'Projects'
 
-  // Close the menu when clicking outside
+  // Close the menus when clicking outside
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen && !bellOpen) return
     const onClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
         setEditing(false)
       }
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false)
+      }
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
-  }, [menuOpen])
+  }, [menuOpen, bellOpen])
 
   const startEdit = () => {
     setNameInput(profile?.full_name ?? '')
@@ -60,8 +67,45 @@ export function TopBar() {
         <span className="text-ink/90 font-medium">{crumb}</span>
       </div>
 
-      {/* User chip */}
-      <div ref={menuRef} className="relative">
+      {/* Right cluster: notifications + user */}
+      <div className="relative flex items-center gap-1">
+        {/* Notification bell */}
+        <div ref={bellRef} className="relative">
+          <button
+            onClick={() => setBellOpen((v) => !v)}
+            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/[0.06] transition-colors"
+            title="Tasks assigned to you"
+          >
+            <BellIcon active={count > 0} />
+            {count > 0 && (
+              <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-accent text-[9px] font-bold text-white flex items-center justify-center">
+                {count}
+              </span>
+            )}
+          </button>
+          {bellOpen && (
+            <div className="absolute right-0 mt-2 w-72 rounded-xl glass-strong border border-white/[0.08] shadow-xl p-2 z-50">
+              <p className="px-2 py-1 text-xs font-semibold text-muted uppercase tracking-wide">Assigned to you</p>
+              {tasks.length === 0 ? (
+                <p className="px-2 py-2 text-xs text-muted">Nothing outstanding.</p>
+              ) : (
+                tasks.map((t) => (
+                  <Link
+                    key={t.id}
+                    to={`/project/${t.project_id}/track/${t.track_id}`}
+                    onClick={() => setBellOpen(false)}
+                    className="block px-2 py-2 rounded-lg text-sm text-ink/85 hover:bg-white/[0.06] transition-colors truncate"
+                  >
+                    {t.title}
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* User chip */}
+        <div ref={menuRef} className="relative">
         <button
           id="top-bar-user"
           onClick={() => setMenuOpen((v) => !v)}
@@ -104,7 +148,27 @@ export function TopBar() {
             </button>
           </div>
         )}
+        </div>
       </div>
     </header>
+  )
+}
+
+function BellIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke={active ? '#ff8a6b' : 'currentColor'}
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={active ? '' : 'text-muted'}
+    >
+      <path d="M8 2a4 4 0 0 0-4 4c0 3-1.2 4-1.2 4h10.4S12 9 12 6a4 4 0 0 0-4-4z" />
+      <path d="M6.8 13a1.4 1.4 0 0 0 2.4 0" />
+    </svg>
   )
 }
