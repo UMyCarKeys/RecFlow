@@ -32,20 +32,22 @@ export function DashboardPage() {
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </div>
 
-      {/* Overall progress across every track */}
+      {/* Overall progress — matched to one cover-tile width */}
       {projects.length > 0 && (
-        <div id="dashboard-overall-progress" className="mb-9 max-w-sm">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-light tracking-wide text-muted uppercase">Overall progress</span>
-            <span className="text-xs font-medium text-white/90">{overallPct}%</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-spectrum"
-              initial={{ width: 0 }}
-              animate={{ width: `${overallPct}%` }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            />
+        <div className="mb-9 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5">
+          <div id="dashboard-overall-progress" className="col-span-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-light tracking-wide text-muted uppercase">Overall</span>
+              <span className="text-xs font-medium text-white/90">{overallPct}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-spectrum"
+                initial={{ width: 0 }}
+                animate={{ width: `${overallPct}%` }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </div>
           </div>
         </div>
       )}

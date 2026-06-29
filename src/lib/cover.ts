@@ -85,6 +85,8 @@ export interface CoverSpec {
   marks: CoverMark[]
   code: string
   discTilt: number
+  float: { dur: number; delay: number }
+  wear: number[] // 4 corner wear opacities (tl, tr, bl, br)
 }
 
 // The many vintage "STEREO" wordmark treatments from the reference sheet
@@ -166,5 +168,7 @@ export function coverSpec(id: string): CoverSpec {
     marks,
     code,
     discTilt: Math.round(rnd() * 30 - 15),
+    float: { dur: 5.5 + rnd() * 3, delay: rnd() * 3 },
+    wear: [0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22, 0.18 + rnd() * 0.22],
   }
 }

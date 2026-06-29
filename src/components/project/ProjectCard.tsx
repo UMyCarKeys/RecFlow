@@ -36,7 +36,12 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
       transition={{ type: 'spring', stiffness: 300, damping: 26 }}
     >
       <Link to={`/project/${project.id}`} className="block group/card">
-        <div className="relative">
+        {/* Floating sleeve — gently hovers, seeded so cards don't bob in unison */}
+        <motion.div
+          className="relative"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: spec.float.dur, delay: spec.float.delay, repeat: Infinity, ease: 'easeInOut' }}
+        >
           {/* Record peeking from behind the sleeve, slides out on hover */}
           <div
             id={`project-${project.id}-disc`}
@@ -46,10 +51,10 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
             <VinylMark />
           </div>
 
-          {/* Sleeve face (square, matte printed) */}
+          {/* Sleeve face (sharp vintage square, matte, no drop shadow) */}
           <div
             id={`project-${project.id}-cover`}
-            className="relative aspect-square rounded-xl overflow-hidden border border-white/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+            className="relative aspect-square rounded-[3px] overflow-hidden border border-white/[0.07] shadow-[inset_0_0_0_1px_rgba(244,236,232,0.05)]"
           >
             {project.cover_url ? (
               <img src={project.cover_url} alt={project.name} className="absolute inset-0 w-full h-full object-cover" />
@@ -84,6 +89,9 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               </>
             )}
 
+            {/* Vintage wear — light scuffing worn through the sharp corners */}
+            <CornerWear wear={spec.wear} />
+
             {/* Progress — contained within the cover square */}
             <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2">
               <div className="flex-1 h-1 rounded-full bg-black/35 overflow-hidden">
@@ -95,7 +103,7 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               <span className="text-[10px] font-medium text-white/90 tabular-nums">{pct}%</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Title */}
         <div id={`project-${project.id}-info`} className="px-1 pt-3">
@@ -106,6 +114,31 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
         </div>
       </Link>
     </motion.div>
+  )
+}
+
+/* ---- Vintage corner wear ---- */
+
+const WEAR_CORNERS = [
+  { pos: 'top-0 left-0', origin: 'top left' },
+  { pos: 'top-0 right-0', origin: 'top right' },
+  { pos: 'bottom-0 left-0', origin: 'bottom left' },
+  { pos: 'bottom-0 right-0', origin: 'bottom right' },
+] as const
+
+function CornerWear({ wear }: { wear: number[] }) {
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {WEAR_CORNERS.map((c, i) => (
+        <div
+          key={c.pos}
+          className={`absolute ${c.pos} w-7 h-7`}
+          style={{
+            backgroundImage: `radial-gradient(circle at ${c.origin}, rgba(244,236,232,${wear[i] ?? 0.2}) 0%, rgba(244,236,232,0) 62%)`,
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
