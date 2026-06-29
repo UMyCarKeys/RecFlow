@@ -3,11 +3,13 @@ import { AudioPlayer } from '@/components/player/AudioPlayer'
 import { PlayerControls } from '@/components/player/PlayerControls'
 
 export function PlayerBar() {
-  const { activeVersionId, activeTrackTitle, isLoading, loadPhase, loadProgress, reset } = usePlayerStore()
+  const { activeVersionId, activeTrackTitle, isLoading, loadPhase, loadProgress, progress, duration, reset } =
+    usePlayerStore()
 
   if (!activeVersionId) return null
 
   const pct = Math.round(loadProgress * 100)
+  const playedPct = duration ? (progress / duration) * 100 : 0
   const statusLabel =
     loadPhase === 'request'
       ? 'Requesting…'
@@ -20,7 +22,10 @@ export function PlayerBar() {
           : 'Now playing'
 
   return (
-    <div id="player-bar" className="fixed bottom-0 left-0 right-0 h-16 bg-surface-1/95 backdrop-blur-md border-t border-white/8 flex items-center px-4 gap-4 z-40">
+    <div
+      id="player-bar"
+      className="group/player fixed bottom-0 left-0 right-0 h-14 glass border-t border-white/[0.06] flex items-center px-4 gap-3 z-40"
+    >
       {/* Load status bar — confirms work is happening after pressing play */}
       {isLoading && (
         <div id="player-bar-status" className="absolute top-0 left-0 right-0 h-[3px] bg-white/10 overflow-hidden">
@@ -32,13 +37,22 @@ export function PlayerBar() {
         </div>
       )}
 
-      <div id="player-bar-track-info" className="flex-shrink-0 min-w-0">
-        <p className={`text-xs truncate max-w-36 ${isLoading ? 'text-accent' : 'text-muted'}`}>{statusLabel}</p>
-        <p className="text-sm text-white font-medium truncate max-w-36">{activeTrackTitle}</p>
+      <div id="player-bar-track-info" className="flex-shrink-0 min-w-0 w-32">
+        <p className={`text-[11px] truncate ${isLoading ? 'text-accent' : 'text-muted'}`}>{statusLabel}</p>
+        <p className="text-sm text-white font-medium truncate">{activeTrackTitle}</p>
       </div>
 
       <PlayerControls />
-      <AudioPlayer />
+
+      {/* Recessed by default (thin progress line); reveals the waveform on hover */}
+      <div className="relative flex-1 mx-1 h-9 flex items-center">
+        <div className="absolute left-0 right-0 h-[3px] rounded-full bg-white/10 opacity-100 group-hover/player:opacity-0 transition-opacity duration-300">
+          <div className="h-full rounded-full bg-spectrum" style={{ width: `${playedPct}%` }} />
+        </div>
+        <div className="absolute inset-0 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300 pointer-events-none group-hover/player:pointer-events-auto">
+          <AudioPlayer />
+        </div>
+      </div>
 
       <button
         id="player-bar-close"
