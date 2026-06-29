@@ -2,13 +2,15 @@ import { useEffect, useRef } from 'react'
 import { useDepthStore } from '@/store/depthStore'
 
 /**
- * Reactive depth background — a full-screen GLSL gradient world that:
- *  - continuously drifts (domain-warped fbm noise) for a living, breathing feel
- *  - parallaxes toward the mouse
- *  - zooms inward as the navigation depth increases (dashboard -> project -> track)
+ * Reactive depth background — a heavily frosted, vivid gradient world.
  *
- * Rendered with raw WebGL (single full-screen quad) so it stays extremely light
- * and never competes with the React Three Fiber vinyl canvas.
+ * The shader renders a vivid, drifting color field; it is then rendered at low
+ * internal resolution and pushed through a large CSS blur so the colors read as
+ * glowing light behind frosted glass. A crisp SVG grain overlay sits on top for
+ * texture. The field:
+ *  - breathes continuously (domain-warped fbm noise)
+ *  - parallaxes very gently toward the mouse (low sensitivity)
+ *  - zooms on navigation depth, with an ease-in-out (ramp up / taper out) tween
  */
 
 const VERT = `
@@ -24,7 +26,7 @@ precision highp float;
 uniform float u_time;
 uniform vec2  u_resolution;
 uniform vec2  u_mouse;   // -1..1
-uniform float u_depth;   // smoothed 0..2
+uniform float u_depth;   // eased 0..2
 
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -60,12 +62,14 @@ void main() {
   vec2 p = uv;
   p.x *= aspect;
 
-  // Deeper navigation zooms into the field
-  float zoom = 1.0 + u_depth * 0.55;
-  p = (p - 0.5 * vec2(aspect, 1.0)) * zoom + 0.5 * vec2(aspect, 1.0);
+  // Inverted depth zoom: navigating deeper enlarges the field (dive-in feel).
+  // Eased in JS, so this ramps up then tapers off during transitions.
+  float zoom = 1.0 - u_depth * 0.16;
+  vec2 center = 0.5 * vec2(aspect, 1.0);
+  p = (p - center) * zoom + center;
 
   float t = u_time * 0.035;
-  vec2 mouseOff = u_mouse * 0.12;
+  vec2 mouseOff = u_mouse * 0.05; // low sensitivity
 
   // Domain warping for organic, flowing color movement
   vec2 q = vec2(fbm(p + vec2(0.0, t) + mouseOff),
@@ -74,7 +78,7 @@ void main() {
                 fbm(p + 2.0 * q + vec2(8.3, 2.8) - t * 0.5));
   float f = fbm(p + 2.5 * r);
 
-  // Warm Spectrum palette
+  // Warm Spectrum palette (vivid)
   vec3 base   = vec3(0.102, 0.086, 0.125); // #1a1620
   vec3 coral  = vec3(1.0,   0.541, 0.42);  // #ff8a6b
   vec3 amber  = vec3(1.0,   0.769, 0.42);  // #ffc46b
@@ -82,25 +86,46 @@ void main() {
   vec3 violet = vec3(0.722, 0.549, 1.0);   // #b88cff
 
   vec3 col = base;
-  col = mix(col, rose,   smoothstep(0.0, 0.9, f)   * 0.55);
-  col = mix(col, coral,  smoothstep(0.2, 1.0, r.x) * 0.50);
-  col = mix(col, amber,  smoothstep(0.3, 1.0, q.y) * 0.32);
-  col = mix(col, violet, smoothstep(0.4, 1.0, r.y) * 0.42);
+  col = mix(col, rose,   smoothstep(0.0, 0.85, f)  * 0.75);
+  col = mix(col, coral,  smoothstep(0.15, 1.0, r.x) * 0.70);
+  col = mix(col, amber,  smoothstep(0.25, 1.0, q.y) * 0.50);
+  col = mix(col, violet, smoothstep(0.35, 1.0, r.y) * 0.60);
 
-  // Keep it washed / semi-dark: pull toward base in the low areas
-  col = mix(base, col, smoothstep(0.05, 0.8, f + 0.2));
+  // Keep it washed / semi-dark in the low areas
+  col = mix(base, col, smoothstep(0.02, 0.75, f + 0.25));
 
-  // Vignette toward the edges so content stays readable
-  float vig = smoothstep(1.25, 0.25, length(uv - 0.5));
-  col *= mix(0.62, 1.0, vig);
+  // Vividness + saturation boost so the colors shine through the frost
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(lum), col, 1.5);
+  col = clamp(col, 0.0, 1.0);
 
-  // Subtle film grain
-  float g = hash(gl_FragCoord.xy + fract(u_time));
-  col += (g - 0.5) * 0.022;
+  // Neon streak accents — thin bright bands flowing through the field
+  float streak = smoothstep(0.96, 1.0, fbm(p * vec2(0.6, 2.6) + vec2(t * 2.2, 0.0)));
+  col += streak * vec3(1.0, 0.45, 0.85) * 0.6;
+
+  // Sparkle grain — bright twinkling points (become soft glints after blur)
+  vec2 sgrid = gl_FragCoord.xy / 2.5;
+  float sp = hash(floor(sgrid));
+  float tw = sin(u_time * 3.2 + sp * 120.0) * 0.5 + 0.5;
+  float sparkle = smoothstep(0.984, 1.0, sp) * tw;
+  col += sparkle * vec3(1.0, 0.92, 0.82) * 1.1;
+
+  // Vignette toward the edges
+  float vig = smoothstep(1.3, 0.3, length(uv - 0.5));
+  col *= mix(0.6, 1.0, vig);
 
   gl_FragColor = vec4(col, 1.0);
 }
 `
+
+// Render small (cheap) and blur heavily for the frosted look.
+const RENDER_SCALE = 0.5
+const OVERSIZE = 1.14 // canvas extends past the viewport so blur edges aren't visible
+
+function smootherstep(x: number) {
+  x = Math.min(1, Math.max(0, x))
+  return x * x * x * (x * (x * 6 - 15) + 10)
+}
 
 export function DepthBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -143,12 +168,11 @@ export function DepthBackground() {
     const uMouse = gl.getUniformLocation(program, 'u_mouse')
     const uDepth = gl.getUniformLocation(program, 'u_depth')
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
     const resize = () => {
-      const w = window.innerWidth
-      const h = window.innerHeight
-      canvas.width = Math.floor(w * dpr)
-      canvas.height = Math.floor(h * dpr)
+      const w = window.innerWidth * OVERSIZE
+      const h = window.innerHeight * OVERSIZE
+      canvas.width = Math.floor(w * RENDER_SCALE)
+      canvas.height = Math.floor(h * RENDER_SCALE)
       canvas.style.width = w + 'px'
       canvas.style.height = h + 'px'
       gl.viewport(0, 0, canvas.width, canvas.height)
@@ -158,25 +182,41 @@ export function DepthBackground() {
 
     const targetMouse = { x: 0, y: 0 }
     const curMouse = { x: 0, y: 0 }
-    let curDepth = 0
     const onMove = (e: MouseEvent) => {
       targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1
       targetMouse.y = -((e.clientY / window.innerHeight) * 2 - 1)
     }
     window.addEventListener('mousemove', onMove)
 
+    // Eased depth transition (ramp up / taper out)
+    const DURATION = 0.95
+    let displayDepth = useDepthStore.getState().depth
+    let fromDepth = displayDepth
+    let toDepth = displayDepth
+    let tweenStart = 0
+
     const start = performance.now()
     let raf = 0
     const frame = () => {
       const time = (performance.now() - start) / 1000
-      curMouse.x += (targetMouse.x - curMouse.x) * 0.045
-      curMouse.y += (targetMouse.y - curMouse.y) * 0.045
-      curDepth += (useDepthStore.getState().depth - curDepth) * 0.06
+
+      // Very gentle, slow mouse follow
+      curMouse.x += (targetMouse.x - curMouse.x) * 0.022
+      curMouse.y += (targetMouse.y - curMouse.y) * 0.022
+
+      const target = useDepthStore.getState().depth
+      if (target !== toDepth) {
+        fromDepth = displayDepth
+        toDepth = target
+        tweenStart = time
+      }
+      const prog = (time - tweenStart) / DURATION
+      displayDepth = fromDepth + (toDepth - fromDepth) * smootherstep(prog)
 
       gl.uniform1f(uTime, time)
       gl.uniform2f(uRes, canvas.width, canvas.height)
       gl.uniform2f(uMouse, curMouse.x, curMouse.y)
-      gl.uniform1f(uDepth, curDepth)
+      gl.uniform1f(uDepth, displayDepth)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
       raf = requestAnimationFrame(frame)
     }
@@ -192,11 +232,29 @@ export function DepthBackground() {
   }, [])
 
   return (
-    <canvas
-      ref={canvasRef}
-      id="depth-background"
-      className="fixed inset-0 pointer-events-none"
-      style={{ width: '100vw', height: '100vh', zIndex: 0 }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        id="depth-background"
+        className="fixed pointer-events-none"
+        style={{
+          left: '-7vw',
+          top: '-7vh',
+          zIndex: 0,
+          filter: 'blur(54px) saturate(1.35) brightness(1.05)',
+        }}
+      />
+      {/* Crisp frosted grain texture on top of the blurred color glow */}
+      <div
+        id="depth-grain"
+        className="fixed inset-0 pointer-events-none mix-blend-soft-light opacity-[0.13]"
+        style={{
+          zIndex: 0,
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          backgroundSize: '200px 200px',
+        }}
+      />
+    </>
   )
 }

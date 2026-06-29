@@ -42,7 +42,7 @@ export function ProjectPage() {
       <div id="project-header" className="p-6 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div id="project-title">
-            <h1 className="text-xl font-bold text-white">{project.name}</h1>
+            <h1 className="text-2xl font-light tracking-wide text-white">{project.name}</h1>
             {project.description && <p className="text-muted text-sm mt-1">{project.description}</p>}
           </div>
           <Button variant="ghost" size="sm" onClick={() => setAddingTrack(true)}>+ Add track</Button>

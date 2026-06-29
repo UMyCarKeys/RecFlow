@@ -41,7 +41,7 @@ export function TrackPage() {
           <Link to={`/project/${projectId}`} className="hover:text-white transition-colors">← Back to album</Link>
         </div>
         <div id="track-title-row" className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-white">{track.title}</h1>
+          <h1 className="text-2xl font-light tracking-wide text-white">{track.title}</h1>
           <Button onClick={() => setUploadOpen(true)}>Upload version</Button>
         </div>
         <StageProgress

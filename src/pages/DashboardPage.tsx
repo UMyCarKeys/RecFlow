@@ -22,8 +22,8 @@ export function DashboardPage() {
     <div id="dashboard" className="p-8">
       <div id="dashboard-header" className="flex items-center justify-between mb-8">
         <div id="dashboard-title">
-          <h1 className="text-2xl font-bold text-white">Projects</h1>
-          <p className="text-muted text-sm mt-1">Your album workspaces</p>
+          <h1 className="text-3xl font-light tracking-wide text-white">Projects</h1>
+          <p className="text-muted text-sm mt-1.5 font-light">Your album workspaces</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </div>
