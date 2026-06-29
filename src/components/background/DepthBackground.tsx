@@ -69,7 +69,7 @@ void main() {
   p = (p - center) * zoom + center;
 
   float t = u_time * 0.035;
-  vec2 mouseOff = u_mouse * 0.05; // low sensitivity
+  vec2 mouseOff = u_mouse * 0.08; // mouse parallax sensitivity
 
   // Domain warping for organic, flowing color movement
   vec2 q = vec2(fbm(p + vec2(0.0, t) + mouseOff),
@@ -200,9 +200,9 @@ export function DepthBackground() {
     const frame = () => {
       const time = (performance.now() - start) / 1000
 
-      // Very gentle, slow mouse follow
-      curMouse.x += (targetMouse.x - curMouse.x) * 0.022
-      curMouse.y += (targetMouse.y - curMouse.y) * 0.022
+      // Gentle mouse follow
+      curMouse.x += (targetMouse.x - curMouse.x) * 0.03
+      curMouse.y += (targetMouse.y - curMouse.y) * 0.03
 
       const target = useDepthStore.getState().depth
       if (target !== toDepth) {

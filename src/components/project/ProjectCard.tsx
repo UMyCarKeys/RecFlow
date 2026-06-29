@@ -126,18 +126,35 @@ const WEAR_CORNERS = [
   { pos: 'bottom-0 right-0', origin: 'bottom right' },
 ] as const
 
+// Fine grain used for the abraded corner texture
+const WEAR_NOISE =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E\")"
+
 function CornerWear({ wear }: { wear: number[] }) {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {WEAR_CORNERS.map((c, i) => (
-        <div
-          key={c.pos}
-          className={`absolute ${c.pos} w-7 h-7`}
-          style={{
-            backgroundImage: `radial-gradient(circle at ${c.origin}, rgba(244,236,232,${wear[i] ?? 0.2}) 0%, rgba(244,236,232,0) 62%)`,
-          }}
-        />
-      ))}
+      {WEAR_CORNERS.map((c, i) => {
+        const amt = wear[i] ?? 0.2
+        const mask = `radial-gradient(circle at ${c.origin}, #000 0%, #000 22%, transparent 68%)`
+        return (
+          <div
+            key={c.pos}
+            className={`absolute ${c.pos} w-9 h-9`}
+            style={{ WebkitMaskImage: mask, maskImage: mask }}
+          >
+            {/* worn-through highlight grain */}
+            <div
+              className="absolute inset-0 mix-blend-screen"
+              style={{ backgroundImage: WEAR_NOISE, backgroundSize: '70px 70px', opacity: amt }}
+            />
+            {/* darker scuff/dirt grain */}
+            <div
+              className="absolute inset-0 mix-blend-multiply"
+              style={{ backgroundImage: WEAR_NOISE, backgroundPosition: '13px 9px', backgroundSize: '70px 70px', opacity: amt * 0.7 }}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }
