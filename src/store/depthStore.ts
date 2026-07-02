@@ -39,6 +39,9 @@ interface DepthState {
   /** Which track strip is hovered (drives the glow + caption). */
   hoveredTrackId: string | null
   setHoveredTrackId: (id: string | null) => void
+  /** Screen point of the hovered arc (cursor on the strip) — anchors the label. */
+  hoverPoint: { x: number; y: number } | null
+  setHoverPoint: (p: { x: number; y: number } | null) => void
   /** Page-supplied handler run when a track strip is clicked (drill into track). */
   onSelectTrack: ((id: string) => void) | null
   setOnSelectTrack: (fn: ((id: string) => void) | null) => void
@@ -55,6 +58,8 @@ export const useDepthStore = create<DepthState>((set) => ({
   setTracks: (tracks) => set({ tracks }),
   hoveredTrackId: null,
   setHoveredTrackId: (hoveredTrackId) => set({ hoveredTrackId }),
+  hoverPoint: null,
+  setHoverPoint: (hoverPoint) => set({ hoverPoint }),
   onSelectTrack: null,
   setOnSelectTrack: (onSelectTrack) => set({ onSelectTrack }),
 }))

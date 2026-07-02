@@ -5,7 +5,8 @@ import { getProject, types } from '@theatre/core'
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
-import { STAGE_VALUE, STAGE_LABEL } from '@/lib/progress'
+import { useSleeveTransition } from '@/store/sleeveTransition'
+import { STAGE_VALUE } from '@/lib/progress'
 import { trackHue } from '@/lib/trackColor'
 
 /**
@@ -80,7 +81,7 @@ void main(){
   vec2 center = 0.5 * vec2(aspect, 1.0);
   p = (p - center) * zoom + center;
   float t = u_time * 0.075;
-  vec2 mouseOff = u_mouse * 0.2;
+  vec2 mouseOff = u_mouse * 0.12;
   vec2 q = vec2(fbm(p+vec2(0.,t)+mouseOff), fbm(p+vec2(5.2,-t)+mouseOff));
   vec2 r = vec2(fbm(p+2.*q+vec2(1.7,9.2)+t*.5), fbm(p+2.*q+vec2(8.3,2.8)-t*.5));
   float f = fbm(p+2.5*r);
@@ -111,7 +112,17 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
 function Backdrop() {
   const mat = useRef<THREE.ShaderMaterial>(null!)
   const meshRef = useRef<THREE.Mesh>(null!)
-  const { size, pointer, camera } = useThree()
+  const { size, camera } = useThree()
+  // Track the mouse from a window listener (the canvas is pointer-events:none, so
+  // R3F's own pointer state never updates) — keeps the field mouse-reactive.
+  const mouse = useMemo(() => new THREE.Vector2(0, 0), [])
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      mouse.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1))
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [mouse])
   // Saturation knob: the page palette is near-white, so raise this to make the
   // colored "lights" read through the transmissive disc.
   // Defaults match the page's DepthBackground (saturation 1.45, no extra
@@ -135,7 +146,7 @@ function Backdrop() {
   useFrame((state) => {
     uniforms.u_time.value = state.clock.elapsedTime
     uniforms.u_resolution.value.set(size.width, size.height)
-    uniforms.u_mouse.value.lerp(new THREE.Vector2(pointer.x, pointer.y), 0.06)
+    uniforms.u_mouse.value.lerp(mouse, 0.06)
     uniforms.u_depth.value = useDepthStore.getState().depth
     uniforms.u_sat.value = bg.saturation
     uniforms.u_contrast.value = bg.contrast
@@ -164,27 +175,26 @@ function Backdrop() {
   )
 }
 
-// Camera rig: bind the camera's position + look-at to a Theatre object so the
-// fly-in / framing can be keyframed as a stage.
+// Camera pose per drill-in depth: 1 = project / track-selection, 2 = single track.
+const STAGE_CAM: Record<number, { pos: [number, number, number]; look: [number, number, number] }> = {
+  1: { pos: [-0.09, -1.71, 1.19], look: [0, -0.19, -0.21] },
+  2: { pos: [0, -1.05, 0.19], look: [0.05, -0.26, -0.36] },
+}
+
+// Camera rig: smoothly flies the camera to the pose for the current app depth,
+// so drilling from the record into a single track re-frames the vinyl.
 function CameraRig() {
   const cam = useThree((s) => s.camera)
-  const obj = useMemo(
-    () =>
-      sheet.object(
-        'Camera',
-        {
-          // Track / record-selection stage (depth 1) framing.
-          position: types.compound({ x: -0.09, y: -1.71, z: 1.19 }),
-          lookAt: types.compound({ x: 0, y: -0.19, z: -0.21 }),
-        },
-        { reconfigure: true },
-      ),
-    [],
-  )
-  useFrame(() => {
-    const v = obj.value
-    cam.position.set(v.position.x, v.position.y, v.position.z)
-    cam.lookAt(v.lookAt.x, v.lookAt.y, v.lookAt.z)
+  const look = useMemo(() => new THREE.Vector3(...STAGE_CAM[1].look), [])
+  const tPos = useMemo(() => new THREE.Vector3(), [])
+  const tLook = useMemo(() => new THREE.Vector3(), [])
+  useFrame((_, delta) => {
+    const depth = useDepthStore.getState().depth
+    const s = STAGE_CAM[depth] ?? STAGE_CAM[1]
+    const a = 1 - Math.pow(0.005, delta) // frame-rate-independent smoothing
+    cam.position.lerp(tPos.set(...s.pos), a)
+    look.lerp(tLook.set(...s.look), a)
+    cam.lookAt(look)
   })
   return null
 }
@@ -297,7 +307,8 @@ function CenterLabel({ wash }: { wash: number }) {
   const col = useMemo(() => new THREE.Color('#cdc4bc').lerp(new THREE.Color('#ffffff'), wash), [wash])
   return (
     <mesh position={[0, 0, 0.02]}>
-      <circleGeometry args={[0.38, 96]} />
+      {/* ring, not a disc — leaves the center spindle hole open to see through */}
+      <ringGeometry args={[0.05, 0.38, 96]} />
       <meshBasicMaterial color={col} toneMapped={false} />
     </mesh>
   )
@@ -328,6 +339,36 @@ function makeRayTexture(): THREE.CanvasTexture {
   ctx.fillStyle = g
   ctx.fillRect(0, 0, s, s)
   return new THREE.CanvasTexture(c)
+}
+
+// Flat glass disc with a REAL center hole, so the spindle hole is genuine empty
+// space you see straight through. Custom radial UVs keep the concentric groove
+// normal map centered (default extrude UVs would break it).
+function makeHoledDiscGeometry(outer = 1, hole = 0.05, thickness = 0.03): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape()
+  shape.absarc(0, 0, outer, 0, Math.PI * 2, false)
+  const holePath = new THREE.Path()
+  holePath.absarc(0, 0, hole, 0, Math.PI * 2, true)
+  shape.holes.push(holePath)
+  const radialUV = (verts: number[], i: number) =>
+    new THREE.Vector2(verts[i * 3] / (outer * 2) + 0.5, verts[i * 3 + 1] / (outer * 2) + 0.5)
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: false,
+    curveSegments: 128,
+    steps: 1,
+    UVGenerator: {
+      generateTopUV: (_g, verts, a, b, c) => [radialUV(verts, a), radialUV(verts, b), radialUV(verts, c)],
+      generateSideWallUV: (_g, verts, a, b, c, d) => [
+        radialUV(verts, a),
+        radialUV(verts, b),
+        radialUV(verts, c),
+        radialUV(verts, d),
+      ],
+    },
+  })
+  geo.translate(0, 0, -thickness / 2) // centre the thickness on z=0
+  return geo
 }
 
 function TrackRings() {
@@ -369,6 +410,8 @@ function TrackRings() {
       const next = pick(e.clientX, e.clientY)
       const st = useDepthStore.getState()
       if (next !== st.hoveredTrackId) st.setHoveredTrackId(next) // avoid redundant re-renders
+      if (next) st.setHoverPoint({ x: e.clientX, y: e.clientY })
+      else if (st.hoverPoint) st.setHoverPoint(null)
     }
     const onClick = (e: MouseEvent) => {
       const id = pick(e.clientX, e.clientY)
@@ -416,9 +459,10 @@ function TrackRings() {
                 <ringGeometry args={[inner, outer, 128, 1, arcStart, arc]} />
                 <meshBasicMaterial color={arcColor} toneMapped={false} />
               </mesh>
-              {/* invisible full-band hit ring for raycasting */}
+              {/* invisible hit area — matches the colored arc exactly, so hover /
+                  click only register where the color actually is. */}
               <mesh position={[0, 0, cfg.zOffset]} userData={{ trackId: track.id }}>
-                <ringGeometry args={[inner - ringThk * 0.15, outer + ringThk * 0.15, 48]} />
+                <ringGeometry args={[inner, outer, 128, 1, arcStart, arc]} />
                 <meshBasicMaterial visible={false} />
               </mesh>
             </group>
@@ -458,52 +502,47 @@ function TrackRings() {
   )
 }
 
-// Minimal DOM caption showing the hovered track's name — clean, unobtrusive.
+// Hover callout: the track name anchored to the hovered arc by a minimal leader
+// line, positioned at the cursor point on the strip.
 function TrackCaption() {
   const hoveredId = useDepthStore((s) => s.hoveredTrackId)
+  const point = useDepthStore((s) => s.hoverPoint)
   const tracks = useDepthStore((s) => s.tracks)
   const track = tracks.find((x) => x.id === hoveredId)
+  if (!track || !point) return null
+
+  const OFF_X = 40 // leader line horizontal reach
+  const OFF_Y = 40 // leader line vertical reach (upward)
+  // Flip to the left when near the right edge so the label stays on screen.
+  const left = point.x + OFF_X + 160 > window.innerWidth
+  const dirX = left ? -1 : 1
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 56,
-        display: 'flex',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-        zIndex: 15,
-      }}
-    >
-      <div
+    <div style={{ position: 'fixed', left: point.x, top: point.y, zIndex: 15, pointerEvents: 'none' }}>
+      <svg width={Math.abs(OFF_X) + 8} height={OFF_Y + 8} style={{ position: 'absolute', left: dirX < 0 ? -OFF_X : 0, top: -OFF_Y, overflow: 'visible' }}>
+        <line
+          x1={dirX < 0 ? OFF_X : 0}
+          y1={OFF_Y}
+          x2={dirX < 0 ? 0 : OFF_X}
+          y2={0}
+          stroke="#6b6275"
+          strokeWidth={1}
+        />
+        <circle cx={dirX < 0 ? OFF_X : 0} cy={OFF_Y} r={1.8} fill="#6b6275" />
+      </svg>
+      <span
         style={{
-          opacity: track ? 1 : 0,
-          transform: track ? 'translateY(0)' : 'translateY(6px)',
-          transition: 'opacity 0.25s, transform 0.25s',
-          padding: '8px 18px',
-          borderRadius: 999,
-          background: 'rgba(20,18,26,0.55)',
-          backdropFilter: 'blur(8px)',
-          color: '#fff',
-          font: '500 14px system-ui, -apple-system, sans-serif',
-          letterSpacing: '0.02em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          position: 'absolute',
+          left: dirX < 0 ? -OFF_X : OFF_X,
+          top: -OFF_Y,
+          transform: `translate(${dirX < 0 ? '-100%' : '0'}, -100%)`,
           whiteSpace: 'nowrap',
+          font: '500 14px system-ui, -apple-system, sans-serif',
+          color: '#6b6275',
         }}
       >
-        {track && (
-          <>
-            <span style={{ width: 8, height: 8, borderRadius: 999, background: trackHue(track.id) }} />
-            <span>{track.title}</span>
-            <span style={{ opacity: 0.6, fontSize: 12 }}>
-              {STAGE_LABEL[track.stage as keyof typeof STAGE_LABEL] ?? ''}
-            </span>
-          </>
-        )}
-      </div>
+        {track.title}
+      </span>
     </div>
   )
 }
@@ -512,6 +551,7 @@ function TrackCaption() {
 // Theatre-keyframeable; spin & float are continuous loops with Leva-tuned speeds.
 function Record() {
   const grooveMap = useMemo(() => makeGrooveNormalMap(), [])
+  const discGeo = useMemo(() => makeHoledDiscGeometry(), [])
   const labelCfg = useControls('Vinyl label', {
     wash: { value: 0.35, min: 0, max: 1, step: 0.05 },
   })
@@ -588,12 +628,95 @@ function Record() {
     shaderRef.current = shader as unknown as typeof shaderRef.current
   }, [])
 
+  // Sleeve entrance: when the scene mounts mid sleeve-transition (dashboard →
+  // project), the disc starts FLAT (billboarded to the camera, like a record in
+  // the sleeve) behind the DOM overlay, slides straight up to near the top of
+  // frame, holds a beat, then angles back to the stage rotation while sliding
+  // down into the tracks-view pose. Geometry is computed on the first frame.
+  const entrance = useRef<{
+    pending: boolean
+    t0: number
+    start: THREE.Vector3
+    top: THREE.Vector3
+    axis: THREE.Vector3
+    startScale: number
+    qStart: THREE.Quaternion
+  } | null>(
+    useSleeveTransition.getState().active
+      ? {
+          pending: true,
+          t0: 0,
+          start: new THREE.Vector3(),
+          top: new THREE.Vector3(),
+          axis: new THREE.Vector3(1, 0, 0),
+          startScale: 0.2,
+          qStart: new THREE.Quaternion(),
+        }
+      : null,
+  )
+  const tmpA = useMemo(() => new THREE.Vector3(), [])
+  const tmpB = useMemo(() => new THREE.Vector3(), [])
+  const tmpC = useMemo(() => new THREE.Vector3(), [])
+  const qEnd = useMemo(() => new THREE.Quaternion(), [])
+  const qFlip = useMemo(() => new THREE.Quaternion(), [])
+  const eulerTmp = useMemo(() => new THREE.Euler(), [])
+
   useFrame((state, delta) => {
     // Stage transform from Theatre (keyframed sequences).
     const v = disc.value
-    stage.current.position.set(v.position.x, v.position.y, v.position.z)
-    stage.current.rotation.set(v.rotation.x, v.rotation.y, v.rotation.z)
-    stage.current.scale.setScalar(v.scale)
+    const ent = entrance.current
+    if (ent) {
+      const cam = state.camera
+      if (ent.pending) {
+        // Unproject a screen point onto the disc plane (z = 0).
+        const planePoint = (nx: number, ny: number, out: THREE.Vector3) => {
+          out.set(nx, ny, 0.5).unproject(cam).sub(cam.position).normalize()
+          const t = Math.abs(out.z) > 1e-4 ? -cam.position.z / out.z : 0
+          return out.multiplyScalar(t).add(cam.position)
+        }
+        planePoint(0, 0, ent.start) // sleeve is screen-centred
+        planePoint(0, 0.72, ent.top) // apex the disc rises to (reached now — a lerp target, so keep in frame)
+        // Scale so the disc starts at the sleeve's on-screen size.
+        const o = tmpA.set(0, 0, 0).project(cam)
+        const ex = tmpB.set(1, 0, 0).project(cam)
+        const pxR = Math.hypot(((ex.x - o.x) * state.size.width) / 2, ((ex.y - o.y) * state.size.height) / 2)
+        const sleevePx = Math.min(state.size.width, state.size.height) * 0.44
+        // Start a bit smaller than the sleeve so it reads as coming from depth.
+        ent.startScale = Math.max(0.04, (sleevePx * 0.4) / Math.max(pxR, 1))
+        // Flat in the sleeve: billboarded so the disc face is parallel to the screen.
+        ent.qStart.copy(cam.quaternion)
+        // Flip axis: the camera's right, so the tumble reads head-over-heels on screen.
+        ent.axis.set(1, 0, 0).applyQuaternion(cam.quaternion).normalize()
+        ent.t0 = state.clock.elapsedTime
+        ent.pending = false
+      }
+      // Rise leads: the disc lifts UP first (fast off the start to clear the
+      // sleeve), THEN the flip / scale / move-to-stage taper in. One continuous
+      // motion — the two eases overlap so velocity never hits zero mid-flight.
+      const ENTER_S = 1.05
+      const p = Math.min(1, (state.clock.elapsedTime - ent.t0) / ENTER_S)
+      // Front-loaded vertical rise (fast, done by ~58%).
+      const riseP = Math.min(1, p / 0.58)
+      const riseE = 1 - Math.pow(1 - riseP, 3) // easeOutCubic
+      // Back-loaded settle (starts ~30%): flip, scale, and move into the stage pose.
+      const settleP = Math.min(1, Math.max(0, (p - 0.3) / 0.7))
+      const settleE = settleP * settleP * (3 - 2 * settleP) // smoothstep
+      // Position: rise straight up to the apex, then settle into the stage pose.
+      tmpA.lerpVectors(ent.start, ent.top, riseE)
+      tmpC.set(v.position.x, v.position.y, v.position.z)
+      stage.current.position.lerpVectors(tmpA, tmpC, settleE)
+      // Continuous single tumble that completes face-up exactly on landing.
+      qEnd.setFromEuler(eulerTmp.set(v.rotation.x, v.rotation.y, v.rotation.z))
+      qFlip.setFromAxisAngle(ent.axis, Math.PI * 2 * settleE)
+      stage.current.quaternion.slerpQuaternions(ent.qStart, qEnd, settleE).premultiply(qFlip)
+      // Stays small during the rise, grows as it settles in.
+      stage.current.scale.setScalar(ent.startScale + (v.scale - ent.startScale) * settleE)
+      if (p >= 1) entrance.current = null
+    } else {
+      stage.current.position.set(v.position.x, v.position.y, v.position.z)
+      stage.current.rotation.set(v.rotation.x, v.rotation.y, v.rotation.z)
+      stage.current.scale.setScalar(v.scale)
+    }
     // Continuous loops. Spin about Z now that the disc faces the camera.
     spin.current.rotation.z += delta * loops.spinSpeed
     float.current.position.y = Math.sin(state.clock.elapsedTime * loops.floatSpeed) * loops.floatAmplitude
@@ -605,10 +728,9 @@ function Record() {
     <group ref={stage} name="disc-stage">
       <group ref={float}>
         <group ref={spin}>
-          {/* disc body — grooved glass, stood up to face the camera (+Z) so the
-              refraction reads naturally instead of inverting. */}
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[1, 1, 0.03, 128]} />
+          {/* disc body — grooved glass with a real center hole; faces the camera
+              (+Z) natively as an extruded ring. */}
+          <mesh geometry={discGeo}>
             {glassKind === 'physical' ? (
               // Native three transmission — crisper clean glass, with dispersion.
               <meshPhysicalMaterial
@@ -633,11 +755,6 @@ function Record() {
           </mesh>
           {/* center label: warm neutral that blends into the palette. */}
           <CenterLabel wash={labelCfg.wash} />
-          {/* spindle hole */}
-          <mesh position={[0, 0, 0.021]}>
-            <circleGeometry args={[0.02, 32]} />
-            <meshBasicMaterial color="#0a0a0a" toneMapped={false} />
-          </mesh>
         </group>
         {/* Track groove strips — static (outside spin) so they stay readable. */}
         <TrackRings />
@@ -654,6 +771,9 @@ export function VinylScene() {
   const nav = useControls('Camera', {
     adjust: { value: false, label: 'adjust (orbit / zoom / walk)' },
   })
+  // The disc only appears once you're inside a project (depth > 0); on the
+  // dashboard (depth 0) only the shared 3D backdrop shows.
+  const showDisc = useDepthStore((s) => s.depth) > 0
   const readoutRef = useRef<HTMLDivElement>(null)
   const poseRef = useRef<PoseSnapshot>({
     camera: { position: [0, 0, 0], lookAt: [0, 0, 0] },
@@ -814,7 +934,7 @@ export function VinylScene() {
           <CameraRig />
         )}
         {showBackdrop && <Backdrop />}
-        <Record />
+        {showDisc && <Record />}
         <SequenceDriver />
         <PoseCapture poseRef={poseRef} />
       </Canvas>

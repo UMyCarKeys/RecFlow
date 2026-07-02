@@ -10,7 +10,6 @@ import { VersionCard } from '@/components/track/VersionCard'
 import { UploadVersionModal } from '@/components/track/UploadVersionModal'
 import { StageProgress } from '@/components/track/StageProgress'
 import { IdeaBoard } from '@/components/track/IdeaBoard'
-import { GrooveField } from '@/components/disc/GrooveField'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { CompareLines } from '@/components/track/CompareLines'
 import { GifPicker } from '@/components/track/GifPicker'
@@ -21,7 +20,6 @@ import { Spinner } from '@/components/ui/Spinner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
-import { trackHue } from '@/lib/trackColor'
 import { groupVariants, variantHue, COMPARE_STAGES, POST_MIX_STAGES } from '@/lib/variants'
 import type { Version, TrackStage } from '@/types/database'
 
@@ -86,9 +84,6 @@ export function TrackPage() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
-      {/* Deep groove field in the track's color, hovering behind everything */}
-      <GrooveField hue={trackHue(trackId)} glow={!!(track.notes || track.links.length)} />
-
       <div id="track-header" className="relative z-10 p-6 border-b border-black/[0.06] flex-shrink-0">
         <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-[#6b6275] mb-3">
           <Link to={`/project/${projectId}`} className="hover:text-[#1a1620] transition-colors">← Back to album</Link>

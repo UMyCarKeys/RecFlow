@@ -69,7 +69,7 @@ void main() {
   p = (p - center) * zoom + center;
 
   float t = u_time * 0.075;       // clearer drift
-  vec2 mouseOff = u_mouse * 0.2;  // clearer reaction to the mouse
+  vec2 mouseOff = u_mouse * 0.12;  // gentle reaction to the mouse
 
   // Domain warping for organic, flowing color movement
   vec2 q = vec2(fbm(p + vec2(0.0, t) + mouseOff),
