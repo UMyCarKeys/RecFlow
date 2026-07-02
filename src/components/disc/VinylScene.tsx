@@ -447,7 +447,8 @@ function TrackRings() {
           // Always show a visible colored segment (even at 0% / idea stage) so the
           // track reads on the disc; it grows with progress, full gold at release.
           const arc = Math.max(prog, 0.12) * Math.PI * 2
-          const arcStart = -Math.PI / 2 + 0.075 - arc / 2
+          // Fixed start on the left; the fill grows counter-clockwise from there.
+          const arcStart = Math.PI
           // Default = toned toward white (calm); hover = full vivid color.
           const arcColor = isH ? color : new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.4)
           return (
