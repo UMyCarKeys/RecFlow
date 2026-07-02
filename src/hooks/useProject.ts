@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Project, ProjectMember, MemberRole } from '@/types/database'
 
-export function useProjects() {
+export function useProjects(refreshKey = 0) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Re-fetches whenever refreshKey changes (e.g. right after creating a project).
   useEffect(() => {
     supabase
       .from('projects')
@@ -17,7 +18,7 @@ export function useProjects() {
         else setProjects(data ?? [])
         setLoading(false)
       })
-  }, [])
+  }, [refreshKey])
 
   return { projects, loading, error }
 }

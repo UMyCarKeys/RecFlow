@@ -36,6 +36,9 @@ interface DepthState {
   /** Tracks of the current project, drawn as glowing groove strips on the vinyl. */
   tracks: SceneTrack[]
   setTracks: (tracks: SceneTrack[]) => void
+  /** True while the current project's tracks are still loading (hides the empty hint). */
+  tracksLoading: boolean
+  setTracksLoading: (v: boolean) => void
   /** Which track strip is hovered (drives the glow + caption). */
   hoveredTrackId: string | null
   setHoveredTrackId: (id: string | null) => void
@@ -59,6 +62,8 @@ export const useDepthStore = create<DepthState>((set) => ({
   setCoverSeed: (coverSeed) => set({ coverSeed }),
   tracks: [],
   setTracks: (tracks) => set({ tracks }),
+  tracksLoading: false,
+  setTracksLoading: (tracksLoading) => set({ tracksLoading }),
   hoveredTrackId: null,
   setHoveredTrackId: (hoveredTrackId) => set({ hoveredTrackId }),
   hoverPoint: null,

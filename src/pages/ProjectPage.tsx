@@ -29,6 +29,7 @@ export function ProjectPage() {
   const setCoverUrl = useDepthStore((s) => s.setCoverUrl)
   const setCoverSeed = useDepthStore((s) => s.setCoverSeed)
   const setTracks = useDepthStore((s) => s.setTracks)
+  const setTracksLoading = useDepthStore((s) => s.setTracksLoading)
   const setOnSelectTrack = useDepthStore((s) => s.setOnSelectTrack)
 
   useEffect(() => setDepth(1), [setDepth])
@@ -47,6 +48,11 @@ export function ProjectPage() {
     setTracks(active.map((t) => ({ id: t.id, title: t.title, stage: t.stage })))
     return () => setTracks([])
   }, [tracks, setTracks])
+  // Publish loading so the 3D empty-state hint doesn't flash while tracks load.
+  useEffect(() => {
+    setTracksLoading(tracksLoading)
+    return () => setTracksLoading(false)
+  }, [tracksLoading, setTracksLoading])
   // Drill into a track when its strip is clicked on the vinyl.
   useEffect(() => {
     setOnSelectTrack((tid) => navigate(`/project/${id}/track/${tid}`))
@@ -146,9 +152,8 @@ export function ProjectPage() {
         {tracksLoading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : activeTracks.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-muted text-sm">No active tracks yet. Add one above to start the record.</p>
-          </motion.div>
+          // Empty-state hint is rendered in 3D (anchored to the vinyl groove) by VinylScene.
+          null
         ) : (
           <motion.div
             className="w-full h-full p-6 hidden"

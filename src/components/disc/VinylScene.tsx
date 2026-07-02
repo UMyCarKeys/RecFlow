@@ -1,7 +1,6 @@
 import { useRef, useMemo, useEffect, useCallback, Suspense } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { MeshTransmissionMaterial, OrbitControls, Environment } from '@react-three/drei'
-import { getProject, types } from '@theatre/core'
+import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@react-three/drei'
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
@@ -28,10 +27,8 @@ import { trackHue } from '@/lib/trackColor'
  * keyframed stages.
  */
 
-// ---- Theatre.js: project + sheet (module scope so they're created once) ------
-// To bake edited values into production later: export the state from Studio and
-// pass it here → getProject('RecFlow Vinyl', { state: theatreState }).
-const sheet = getProject('RecFlow Vinyl').sheet('VinylScene')
+// The disc's resting "stage" transform (identity). Camera/entrance handle motion.
+const DISC_POSE = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 }
 
 // Theatre.js Studio (the editor UI) is intentionally NOT initialized — the scene
 // ships without any editing interface. Theatre core still drives the sheet/objects.
@@ -255,19 +252,6 @@ function PoseCapture({ poseRef }: { poseRef: React.RefObject<PoseSnapshot> }) {
   return null
 }
 
-// Drives the Theatre sequence playhead from the app's drill-in depth, so the
-// keyframed camera (position + lookAt) AND disc/element transforms animate in
-// sync with navigation: depth 0 = dashboard, 1 = project/tracks, 2 = track.
-// (Keyframe those poses at t=0/1/2s in Theatre Studio; this scrubs between them.)
-function SequenceDriver() {
-  useFrame(() => {
-    const target = useDepthStore.getState().depth
-    const seq = sheet.sequence
-    seq.position = THREE.MathUtils.lerp(seq.position, target, 0.06)
-  })
-  return null
-}
-
 // Procedural groove normal map (ported from VinylDisc): concentric ridge/valley
 // rings so the flat disc face reads as grooved vinyl. Applied to the glass, the
 // grooves perturb the refraction/highlights — visible ripples through the pane.
@@ -442,8 +426,51 @@ function Arc({
   )
 }
 
+// Lays text out along a circular arc (each glyph positioned + rotated tangentially)
+// so the hint curves like the colored track arcs. Concave-up "smile" at the bottom.
+function ArcText({
+  text,
+  radius,
+  fontSize,
+  color,
+  z,
+  centerAngle = -Math.PI / 2,
+}: {
+  text: string
+  radius: number
+  fontSize: number
+  color: string
+  z: number
+  centerAngle?: number
+}) {
+  const chars = useMemo(() => [...text], [text])
+  const charAngle = (fontSize * 0.60) / radius // ~average glyph advance as an angle
+  const total = (chars.length - 1) * charAngle
+  return (
+    <group position={[0, 0, z]}>
+      {chars.map((ch, i) => {
+        const theta = centerAngle - total / 2 + i * charAngle
+        return (
+          <Text
+            key={i}
+            position={[Math.cos(theta) * radius, Math.sin(theta) * radius, 0]}
+            rotation={[0, 0, theta + Math.PI / 2]}
+            fontSize={fontSize}
+            anchorX="center"
+            anchorY="middle"
+            color={color}
+          >
+            {ch}
+          </Text>
+        )
+      })}
+    </group>
+  )
+}
+
 function TrackRings() {
   const tracks = useDepthStore((s) => s.tracks)
+  const tracksLoading = useDepthStore((s) => s.tracksLoading)
   const hoveredId = useDepthStore((s) => s.hoveredTrackId)
   const groupRef = useRef<THREE.Group>(null!)
   const raysRef = useRef<THREE.Group>(null!)
@@ -516,6 +543,17 @@ function TrackRings() {
 
   return (
     <>
+      {/* Empty-state hint — arced along the groove so it curves like the track
+          arcs, lying in the disc plane (tilts with the vinyl). */}
+      {tracks.length === 0 && !tracksLoading && (
+        <ArcText
+          text="No active tracks yet — add one above to start the record"
+          radius={0.72}
+          fontSize={0.018}
+          color="#6b6275"
+          z={cfg.zOffset + 0.02}
+        />
+      )}
       <group ref={groupRef}>
         {tracks.map((track, i) => {
           const outer = cfg.outerR - i * ringThk
@@ -636,21 +674,6 @@ function Record() {
   const float = useRef<THREE.Group>(null!)
   const spin = useRef<THREE.Group>(null!)
 
-  // Theatre: the disc's keyframeable "stage" transform (position/rotation/scale).
-  const disc = useMemo(
-    () =>
-      sheet.object(
-        'Disc',
-        {
-          position: types.compound({ x: 0, y: 0, z: 0 }),
-          rotation: types.compound({ x: 0, y: 0, z: 0 }),
-          scale: types.number(1, { range: [0, 4] }),
-        },
-        { reconfigure: true },
-      ),
-    [],
-  )
-
   // Leva: continuous loop speeds (spin + float bob).
   const loops = useControls('Vinyl loops', {
     spinSpeed: { value: 0.6, min: 0, max: 4, step: 0.05 },
@@ -739,8 +762,8 @@ function Record() {
   const eulerTmp = useMemo(() => new THREE.Euler(), [])
 
   useFrame((state, delta) => {
-    // Stage transform from Theatre (keyframed sequences).
-    const v = disc.value
+    // Resting stage transform (identity); the entrance + CameraRig do the motion.
+    const v = DISC_POSE
     const ent = entrance.current
     if (ent) {
       const cam = state.camera
@@ -1003,7 +1026,6 @@ export function VinylScene() {
         )}
         {showBackdrop && <Backdrop />}
         {showDisc && <Record />}
-        <SequenceDriver />
         <PoseCapture poseRef={poseRef} />
       </Canvas>
     </>
