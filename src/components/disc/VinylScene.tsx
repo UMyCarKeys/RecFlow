@@ -371,6 +371,77 @@ function makeHoledDiscGeometry(outer = 1, hole = 0.05, thickness = 0.03): THREE.
   return geo
 }
 
+// Progress arc with a hover bloom: default it's a toned/washed color; on hover a
+// vivid glow spreads outward from the cursor's angle along the arc until it fills.
+const ARC_VERT = /* glsl */ `
+varying float vAngle;
+void main(){ vAngle = atan(position.y, position.x); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+`
+const ARC_FRAG = /* glsl */ `
+precision highp float;
+varying float vAngle;
+uniform vec3 uDim;
+uniform vec3 uBright;
+uniform float uHoverAngle;
+uniform float uReach;
+void main(){
+  // Spread both ways from the cursor; the arc geometry bounds it at the start
+  // (clockwise) and the end (counter-clockwise).
+  float d = vAngle - uHoverAngle;
+  d = abs(mod(d + 3.14159265, 6.28318531) - 3.14159265);
+  float glow = 1.0 - smoothstep(uReach - 0.18, uReach + 0.18, d);
+  gl_FragColor = vec4(mix(uDim, uBright, glow), 1.0);
+}
+`
+
+function Arc({
+  inner,
+  outer,
+  arcStart,
+  arc,
+  color,
+  hovered,
+  z,
+}: {
+  inner: number
+  outer: number
+  arcStart: number
+  arc: number
+  color: string
+  hovered: boolean
+  z: number
+}) {
+  const uniforms = useMemo(
+    () => ({
+      uDim: { value: new THREE.Color() },
+      uBright: { value: new THREE.Color() },
+      uHoverAngle: { value: 0 },
+      uReach: { value: 0 },
+    }),
+    [],
+  )
+  useEffect(() => {
+    uniforms.uBright.value.set(color)
+    uniforms.uDim.value.set(color).lerp(new THREE.Color('#ffffff'), 0.4)
+  }, [color, uniforms])
+  const reach = useRef(0)
+  const heldAngle = useRef(0)
+  useFrame((_, delta) => {
+    if (hovered) heldAngle.current = useDepthStore.getState().hoverAngle ?? heldAngle.current
+    uniforms.uHoverAngle.value = heldAngle.current
+    // Grow the bloom to cover the whole arc when hovered, recede when not.
+    const target = hovered ? arc + 0.4 : 0
+    reach.current += (target - reach.current) * Math.min(1, delta * 7)
+    uniforms.uReach.value = reach.current
+  })
+  return (
+    <mesh position={[0, 0, z]}>
+      <ringGeometry args={[inner, outer, 160, 1, arcStart, arc]} />
+      <shaderMaterial vertexShader={ARC_VERT} fragmentShader={ARC_FRAG} uniforms={uniforms} toneMapped={false} />
+    </mesh>
+  )
+}
+
 function TrackRings() {
   const tracks = useDepthStore((s) => s.tracks)
   const hoveredId = useDepthStore((s) => s.hoveredTrackId)
@@ -398,23 +469,32 @@ function TrackRings() {
     const el = gl.domElement
     const raycaster = new THREE.Raycaster()
     const ndc = new THREE.Vector2()
-    const pick = (clientX: number, clientY: number): string | null => {
+    const local = new THREE.Vector3()
+    const pick = (clientX: number, clientY: number): { id: string | null; angle: number } => {
       const r = el.getBoundingClientRect()
       ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1)
       raycaster.setFromCamera(ndc, camera)
       const hits = raycaster.intersectObjects(groupRef.current?.children ?? [], true)
       const hit = hits.find((h) => h.object.userData?.trackId)
-      return (hit?.object.userData.trackId as string) ?? null
+      if (!hit) return { id: null, angle: 0 }
+      // Angle of the cursor on the ring (its local frame) — where the bloom starts.
+      hit.object.worldToLocal(local.copy(hit.point))
+      return { id: hit.object.userData.trackId as string, angle: Math.atan2(local.y, local.x) }
     }
     const onMove = (e: PointerEvent) => {
-      const next = pick(e.clientX, e.clientY)
+      const { id, angle } = pick(e.clientX, e.clientY)
       const st = useDepthStore.getState()
-      if (next !== st.hoveredTrackId) st.setHoveredTrackId(next) // avoid redundant re-renders
-      if (next) st.setHoverPoint({ x: e.clientX, y: e.clientY })
-      else if (st.hoverPoint) st.setHoverPoint(null)
+      if (id !== st.hoveredTrackId) st.setHoveredTrackId(id) // avoid redundant re-renders
+      if (id) {
+        st.setHoverPoint({ x: e.clientX, y: e.clientY })
+        st.setHoverAngle(angle)
+      } else if (st.hoverPoint) {
+        st.setHoverPoint(null)
+        st.setHoverAngle(null)
+      }
     }
     const onClick = (e: MouseEvent) => {
-      const id = pick(e.clientX, e.clientY)
+      const { id } = pick(e.clientX, e.clientY)
       const sel = useDepthStore.getState().onSelectTrack
       if (id && sel) sel(id)
     }
@@ -447,19 +527,15 @@ function TrackRings() {
           // Always show a visible colored segment (even at 0% / idea stage) so the
           // track reads on the disc; it grows with progress, full gold at release.
           const arc = Math.max(prog, 0.12) * Math.PI * 2
-          // Fixed start on the left; the fill grows counter-clockwise from there.
-          const arcStart = Math.PI
-          // Default = toned toward white (calm); hover = full vivid color.
-          const arcColor = isH ? color : new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.4)
+          // Fixed start at the lower-left (where the arc began before); the fill
+          // grows counter-clockwise from there as progress increases.
+          const arcStart = -Math.PI / 2 - 0.3
           return (
             <group key={track.id}>
               {/* colored progress arc — OPAQUE and set INSIDE the disc (behind the
-                  front glass), so the frosted vinyl diffuses it into a soft glow
-                  rising from within rather than a sticker on top. */}
-              <mesh position={[0, 0, cfg.zOffset]}>
-                <ringGeometry args={[inner, outer, 128, 1, arcStart, arc]} />
-                <meshBasicMaterial color={arcColor} toneMapped={false} />
-              </mesh>
+                  front glass), so the frosted vinyl diffuses it. The hover glow
+                  blooms outward from the cursor's angle along the arc. */}
+              <Arc inner={inner} outer={outer} arcStart={arcStart} arc={arc} color={color} hovered={isH} z={cfg.zOffset} />
               {/* invisible hit area — matches the colored arc exactly, so hover /
                   click only register where the color actually is. */}
               <mesh position={[0, 0, cfg.zOffset]} userData={{ trackId: track.id }}>

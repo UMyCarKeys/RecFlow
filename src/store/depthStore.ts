@@ -42,6 +42,9 @@ interface DepthState {
   /** Screen point of the hovered arc (cursor on the strip) — anchors the label. */
   hoverPoint: { x: number; y: number } | null
   setHoverPoint: (p: { x: number; y: number } | null) => void
+  /** Angle (radians) on the arc under the cursor — the bloom spreads from here. */
+  hoverAngle: number | null
+  setHoverAngle: (a: number | null) => void
   /** Page-supplied handler run when a track strip is clicked (drill into track). */
   onSelectTrack: ((id: string) => void) | null
   setOnSelectTrack: (fn: ((id: string) => void) | null) => void
@@ -60,6 +63,8 @@ export const useDepthStore = create<DepthState>((set) => ({
   setHoveredTrackId: (hoveredTrackId) => set({ hoveredTrackId }),
   hoverPoint: null,
   setHoverPoint: (hoverPoint) => set({ hoverPoint }),
+  hoverAngle: null,
+  setHoverAngle: (hoverAngle) => set({ hoverAngle }),
   onSelectTrack: null,
   setOnSelectTrack: (onSelectTrack) => set({ onSelectTrack }),
 }))
