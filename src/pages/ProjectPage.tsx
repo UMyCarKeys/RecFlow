@@ -26,8 +26,32 @@ export function ProjectPage() {
   const [coverBusy, setCoverBusy] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const setDepth = useDepthStore((s) => s.setDepth)
+  const setCoverUrl = useDepthStore((s) => s.setCoverUrl)
+  const setCoverSeed = useDepthStore((s) => s.setCoverSeed)
+  const setTracks = useDepthStore((s) => s.setTracks)
+  const setOnSelectTrack = useDepthStore((s) => s.setOnSelectTrack)
 
   useEffect(() => setDepth(1), [setDepth])
+  // Publish this project's cover to the vinyl center label; clear on leave.
+  useEffect(() => {
+    setCoverUrl(project?.cover_url ?? null)
+    setCoverSeed(id || null) // seed = project id, so the center matches the dashboard art
+    return () => {
+      setCoverUrl(null)
+      setCoverSeed(null)
+    }
+  }, [project?.cover_url, id, setCoverUrl, setCoverSeed])
+  // Publish active tracks as glowing groove strips on the 3D vinyl.
+  useEffect(() => {
+    const active = tracks.filter((t) => !t.archived)
+    setTracks(active.map((t) => ({ id: t.id, title: t.title, stage: t.stage })))
+    return () => setTracks([])
+  }, [tracks, setTracks])
+  // Drill into a track when its strip is clicked on the vinyl.
+  useEffect(() => {
+    setOnSelectTrack((tid) => navigate(`/project/${id}/track/${tid}`))
+    return () => setOnSelectTrack(null)
+  }, [setOnSelectTrack, navigate, id])
 
   const isOwner = !!user && !!project && project.owner_id === user.id
 
@@ -127,7 +151,7 @@ export function ProjectPage() {
           </motion.div>
         ) : (
           <motion.div
-            className="w-full h-full p-6"
+            className="w-full h-full p-6 hidden"
             initial={{ scale: 0.6, opacity: 0 }}
             animate={selecting ? { scale: 3.6, opacity: 0 } : { scale: 1, opacity: 1 }}
             transition={{ duration: selecting ? 0.5 : 0.7, ease: [0.22, 1, 0.36, 1] }}

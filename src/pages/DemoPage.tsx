@@ -16,9 +16,31 @@ import type { Track } from '@/types/database'
 export function DemoPage() {
   const navigate = useNavigate()
   const setDepth = useDepthStore((s) => s.setDepth)
+  const setCoverUrl = useDepthStore((s) => s.setCoverUrl)
+  const setCoverSeed = useDepthStore((s) => s.setCoverSeed)
+  const setTracks = useDepthStore((s) => s.setTracks)
+  const setOnSelectTrack = useDepthStore((s) => s.setOnSelectTrack)
   const [selected, setSelected] = useState<DemoTrack | null>(null)
 
   useEffect(() => setDepth(1), [setDepth])
+  // Demo has no uploaded cover — clear so the vinyl shows its fallback label.
+  useEffect(() => {
+    setCoverUrl(null)
+    setCoverSeed(DEMO_PROJECT_NAME) // demo has no upload → show generated art from a seed
+    return () => {
+      setCoverUrl(null)
+      setCoverSeed(null)
+    }
+  }, [setCoverUrl, setCoverSeed])
+  // Publish demo tracks as glowing groove strips on the 3D vinyl.
+  useEffect(() => {
+    setTracks(DEMO_RECORD_TRACKS.map((t) => ({ id: t.id, title: t.title, stage: t.stage })))
+    return () => setTracks([])
+  }, [setTracks])
+  useEffect(() => {
+    setOnSelectTrack((tid) => setSelected(DEMO_TRACKS.find((t) => t.id === tid) ?? null))
+    return () => setOnSelectTrack(null)
+  }, [setOnSelectTrack])
 
   const openTrack = (track: Track) => {
     const demo = DEMO_TRACKS.find((t) => t.id === track.id) ?? null
@@ -44,7 +66,7 @@ export function DemoPage() {
 
       <div className="flex-1 relative min-h-0">
         <motion.div
-          className="w-full h-full p-6"
+          className="w-full h-full p-6 hidden"
           initial={{ scale: 0.72, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}

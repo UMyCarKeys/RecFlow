@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
+import { DiscComparePage } from '@/pages/DiscComparePage' // TEMP: /disc-old comparison
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DemoPage } from '@/pages/DemoPage'
 import { ProjectPage } from '@/pages/ProjectPage'
@@ -32,6 +33,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/disc-old" element={<DiscComparePage />} /> {/* TEMP comparison */}
           <Route
             element={
               <AuthGuard>
