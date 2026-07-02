@@ -33,25 +33,8 @@ import { trackHue } from '@/lib/trackColor'
 // pass it here → getProject('RecFlow Vinyl', { state: theatreState }).
 const sheet = getProject('RecFlow Vinyl').sheet('VinylScene')
 
-// Studio is the editor UI. Dev-only + dynamically imported so it never ships to
-// production. The window flag guards against HMR / StrictMode double-init.
-if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const w = window as unknown as { __theatreStudioInit?: boolean }
-  if (!w.__theatreStudioInit) {
-    w.__theatreStudioInit = true
-    import('@theatre/studio')
-      .then((mod) => {
-        // Vite's dep pre-bundling can double-wrap the default export, so dig for
-        // the object that actually has initialize().
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        const m = mod as any
-        const studio = typeof m.default?.initialize === 'function' ? m.default : m.default?.default ?? m
-        studio.initialize?.()
-        /* eslint-enable @typescript-eslint/no-explicit-any */
-      })
-      .catch(() => {})
-  }
-}
+// Theatre.js Studio (the editor UI) is intentionally NOT initialized — the scene
+// ships without any editing interface. Theatre core still drives the sheet/objects.
 
 // ---- the SAME fragment shader as DepthBackground, as an in-scene backdrop ----
 const BACKDROP_FRAG = /* glsl */ `
@@ -62,6 +45,7 @@ uniform vec2  u_mouse;
 uniform float u_depth;
 uniform float u_sat;
 uniform float u_contrast;
+uniform float u_blur;
 varying vec2 vUv;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -73,8 +57,8 @@ float noise(vec2 p){
 }
 float fbm(vec2 p){ float v=0.,a=.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.; a*=.5; } return v; }
 
-void main(){
-  vec2 uv = vUv;
+// The colour field at a single uv sample.
+vec3 field(vec2 uv){
   float aspect = u_resolution.x / u_resolution.y;
   vec2 p = uv; p.x *= aspect;
   float zoom = 1.0 - u_depth * 0.26;
@@ -96,7 +80,22 @@ void main(){
   float lum=dot(col,vec3(.299,.587,.114));
   col=mix(vec3(lum),col,u_sat);
   col=(col-0.5)*u_contrast+0.5; // push contrast so the glass has something to refract
-  col=clamp(col,0.,1.);
+  return clamp(col,0.,1.);
+}
+
+void main(){
+  // 9-tap blur of the field only (this plane), so the environment softens while
+  // the disc / arcs (separate meshes) stay sharp.
+  float b = u_blur;
+  vec3 col = field(vUv) * 0.25;
+  col += field(vUv + vec2( b, 0.)) * 0.125;
+  col += field(vUv + vec2(-b, 0.)) * 0.125;
+  col += field(vUv + vec2(0.,  b)) * 0.125;
+  col += field(vUv + vec2(0., -b)) * 0.125;
+  col += field(vUv + vec2( b,  b)) * 0.0625;
+  col += field(vUv + vec2(-b,  b)) * 0.0625;
+  col += field(vUv + vec2( b, -b)) * 0.0625;
+  col += field(vUv + vec2(-b, -b)) * 0.0625;
   gl_FragColor=vec4(col,1.0);
 }
 `
@@ -139,6 +138,7 @@ function Backdrop() {
       u_depth: { value: useDepthStore.getState().depth },
       u_sat: { value: 1.45 },
       u_contrast: { value: 1.0 },
+      u_blur: { value: 0.02 }, // soft frost on the environment only (this plane)
     }),
     [], // eslint-disable-line react-hooks/exhaustive-deps
   )
@@ -869,18 +869,9 @@ export function VinylScene() {
 
   return (
     <>
-      {/* Leva panel — dev-only. Widened so longer labels/values aren't clipped. */}
-      <Leva
-        collapsed
-        hidden={!import.meta.env.DEV}
-        theme={{
-          sizes: {
-            rootWidth: '360px',
-            controlWidth: '150px',
-            numberInputMinWidth: '60px',
-          },
-        }}
-      />
+      {/* Leva controls stay wired (they still supply values) but the panel is
+          always hidden — no editing UI in dev or production. */}
+      <Leva hidden />
       {nav.adjust && (
         <div
           ref={readoutRef}
