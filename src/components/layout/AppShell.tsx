@@ -3,16 +3,17 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { PlayerBar } from './PlayerBar'
 import { Toast } from '@/components/ui/Toast'
-import { DepthBackground } from '@/components/background/DepthBackground'
 import { VinylScene } from '@/components/disc/VinylScene'
 import { SleeveTransition } from '@/components/disc/SleeveTransition'
 
 export function AppShell() {
   return (
     <div id="app-shell" className="relative h-screen overflow-hidden text-ink">
-      <DepthBackground />
-      {/* 3D environment is the background on every page; the disc itself only
-          shows once you're inside a project (depth > 0). */}
+      {/* VinylScene's own Backdrop plane is the sole background on every page
+          (it fully covers the viewport whenever showBackdrop is on); the disc
+          itself only shows once you're inside a project (depth > 0). There is
+          no separate 2D background layer — the 3D environment is the only
+          source of background rendering, on desktop and mobile alike. */}
       <VinylScene />
 
       <div className="relative z-10 flex h-full">

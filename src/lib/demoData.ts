@@ -97,7 +97,7 @@ export const DEMO_TRACKS: DemoTrack[] = [
   },
 ]
 
-/** Minimal Track-shaped objects so the demo can feed the real VinylRecord. */
+/** Minimal Track-shaped objects so the demo can feed the 3D vinyl (VinylScene) via useDepthStore. */
 export const DEMO_RECORD_TRACKS: Track[] = DEMO_TRACKS.map((t) => ({
   id: t.id,
   project_id: 'demo',

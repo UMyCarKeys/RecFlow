@@ -21,6 +21,8 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
   const spec = useMemo(() => coverSpec(project.id), [project.id])
   const pct = Math.round(progress * 100)
   const startTransition = useSleeveTransition((s) => s.start)
+  const activeTransition = useSleeveTransition((s) => s.active)
+  const isTransitioning = activeTransition?.projectId === project.id
 
   // Plain left-clicks play the sleeve transition (which navigates itself);
   // modified clicks (new tab etc.) keep normal link behaviour.
@@ -60,6 +62,7 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
           <div
             id={`project-${project.id}-cover`}
             className="relative aspect-square rounded-xl overflow-hidden border border-white/[0.14]"
+            style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 120ms ease' }}
           >
             {/* the art as diffused light — scaled up so the heavy blur has no hard edges */}
             <div

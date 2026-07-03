@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
 import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
-import { VinylRecord } from '@/components/disc/VinylRecord'
 import { MembersModal } from '@/components/project/MembersModal'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { uploadCover } from '@/lib/uploadCover'
-import type { Track } from '@/types/database'
 
 export function ProjectPage() {
   const { id = '' } = useParams()
@@ -21,7 +18,6 @@ export function ProjectPage() {
   const navigate = useNavigate()
   const [addingTrack, setAddingTrack] = useState(false)
   const [newTrackTitle, setNewTrackTitle] = useState('')
-  const [selecting, setSelecting] = useState<Track | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
   const [coverBusy, setCoverBusy] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -93,12 +89,6 @@ export function ProjectPage() {
   const activeTracks = tracks.filter((t) => !t.archived)
   const archivedCount = tracks.length - activeTracks.length
 
-  // Dive into a track: zoom the record up, then navigate
-  const handleSelect = (track: Track) => {
-    setSelecting(track)
-    setTimeout(() => navigate(`/project/${id}/track/${track.id}`), 520)
-  }
-
   if (projLoading) return <div id="project-loading" className="flex justify-center py-24"><Spinner /></div>
   if (!project) return <p className="text-muted text-sm p-8">Project not found.</p>
 
@@ -147,22 +137,14 @@ export function ProjectPage() {
         )}
       </div>
 
-      {/* The record — focal point */}
+      {/* The record — focal point. The disc itself (including its empty-state
+          hint and per-track groove strips) is rendered in 3D by VinylScene,
+          which reads tracks/loading state from useDepthStore (published
+          above). This area only needs to reserve layout space and show a
+          loading spinner while tracks are being fetched. */}
       <div id="project-record" className="flex-1 relative min-h-0">
-        {tracksLoading ? (
+        {tracksLoading && (
           <div className="flex justify-center py-16"><Spinner /></div>
-        ) : activeTracks.length === 0 ? (
-          // Empty-state hint is rendered in 3D (anchored to the vinyl groove) by VinylScene.
-          null
-        ) : (
-          <motion.div
-            className="w-full h-full p-6 hidden"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={selecting ? { scale: 3.6, opacity: 0 } : { scale: 1, opacity: 1 }}
-            transition={{ duration: selecting ? 0.5 : 0.7, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <VinylRecord tracks={activeTracks} projectName={project.name} onSelect={handleSelect} />
-          </motion.div>
         )}
 
         {archivedCount > 0 && (

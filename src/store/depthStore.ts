@@ -13,7 +13,7 @@ export interface SceneTrack {
  *   1 = project   (record with track grooves)
  *   2 = track     (single groove detail)
  *
- * The DepthBackground shader reads this every frame and smoothly zooms the
+ * VinylScene's Backdrop shader reads this every frame and smoothly zooms the
  * gradient world to match, so navigating deeper feels like physically diving in.
  */
 interface DepthState {

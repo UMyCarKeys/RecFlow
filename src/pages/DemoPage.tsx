@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useDepthStore } from '@/store/depthStore'
-import { VinylRecord } from '@/components/disc/VinylRecord'
 import { StageProgress } from '@/components/track/StageProgress'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -11,7 +9,6 @@ import { Tag } from '@/components/ui/Tag'
 import { formatDuration, timeAgo } from '@/lib/utils'
 import { variantHue } from '@/lib/variants'
 import { DEMO_TRACKS, DEMO_RECORD_TRACKS, DEMO_PROJECT_NAME, type DemoTrack } from '@/lib/demoData'
-import type { Track } from '@/types/database'
 
 export function DemoPage() {
   const navigate = useNavigate()
@@ -42,11 +39,6 @@ export function DemoPage() {
     return () => setOnSelectTrack(null)
   }, [setOnSelectTrack])
 
-  const openTrack = (track: Track) => {
-    const demo = DEMO_TRACKS.find((t) => t.id === track.id) ?? null
-    setSelected(demo)
-  }
-
   return (
     <div id="demo-page" className="h-full flex flex-col">
       <div className="p-6 flex-shrink-0">
@@ -64,16 +56,10 @@ export function DemoPage() {
         </div>
       </div>
 
-      <div className="flex-1 relative min-h-0">
-        <motion.div
-          className="w-full h-full p-6 hidden"
-          initial={{ scale: 0.72, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <VinylRecord tracks={DEMO_RECORD_TRACKS} projectName={DEMO_PROJECT_NAME} onSelect={openTrack} />
-        </motion.div>
-      </div>
+      {/* The disc itself is rendered in 3D by VinylScene, driven by the
+          depth-store track/select wiring above; this area just reserves the
+          layout space for it. */}
+      <div className="flex-1 relative min-h-0" />
 
       <Modal open={selected !== null} onClose={() => setSelected(null)} title={selected?.title ?? ''}>
         {selected && <DemoTrackDetail track={selected} />}

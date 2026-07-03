@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect, useCallback, Suspense } from 'react'
+import { useRef, useMemo, useEffect, useCallback, useState, Suspense } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@react-three/drei'
 import { useControls, button, Leva } from 'leva'
@@ -12,8 +12,9 @@ import { trackHue } from '@/lib/trackColor'
  * VinylScene — Path A frosted-glass vinyl, wired for in-browser authoring.
  *
  * A separate R3F canvas that sits OVER the page. Inside it we render a backdrop
- * plane running the SAME fbm color-field shader as DepthBackground, so the
- * transmissive vinyl refracts a copy of the real background.
+ * plane running an fbm color-field shader — this IS the app's background on
+ * every page (there is no separate 2D background layer), and it also gives
+ * the transmissive vinyl something to refract.
  *
  * Editing (dev only):
  *   - Theatre.js Studio (top-right panel + timeline) keyframes the disc & camera
@@ -30,10 +31,45 @@ import { trackHue } from '@/lib/trackColor'
 // The disc's resting "stage" transform (identity). Camera/entrance handle motion.
 const DISC_POSE = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 }
 
+// --- perf / power helpers -------------------------------------------------
+// This scene renders a full-screen WebGL canvas with a per-pixel noise shader
+// plus a transmissive-glass material every frame, which can push GPU/CPU (and
+// fan noise) higher than a typical page. These two hooks let it back off:
+//   - pause the render loop entirely while the tab is backgrounded
+//   - respect the OS/browser "reduce motion" preference by stopping the
+//     continuous spin/float loops (the disc still renders, just holds still)
+// Neither changes any data flow — they only gate rendering/animation.
+
+// Tracks document visibility so the Canvas can stop its render loop when the
+// tab isn't visible (background tab), instead of rendering at full rate
+// off-screen forever.
+function useIsPageVisible(): boolean {
+  const [visible, setVisible] = useState(() => typeof document === 'undefined' || document.visibilityState === 'visible')
+  useEffect(() => {
+    const onChange = () => setVisible(document.visibilityState === 'visible')
+    document.addEventListener('visibilitychange', onChange)
+    return () => document.removeEventListener('visibilitychange', onChange)
+  }, [])
+  return visible
+}
+
+// Tracks the `prefers-reduced-motion` media query.
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const onChange = () => setReduced(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return reduced
+}
+
 // Theatre.js Studio (the editor UI) is intentionally NOT initialized — the scene
 // ships without any editing interface. Theatre core still drives the sheet/objects.
 
-// ---- the SAME fragment shader as DepthBackground, as an in-scene backdrop ----
+// ---- the app's background fragment shader, rendered here as an in-scene backdrop ----
 const BACKDROP_FRAG = /* glsl */ `
 precision highp float;
 uniform float u_time;
@@ -81,18 +117,17 @@ vec3 field(vec2 uv){
 }
 
 void main(){
-  // 9-tap blur of the field only (this plane), so the environment softens while
-  // the disc / arcs (separate meshes) stay sharp.
+  // 5-tap blur of the field only (this plane), so the environment softens while
+  // the disc / arcs (separate meshes) stay sharp. (Dropped the 4 diagonal taps
+  // from the original 9-tap version — visually near-identical since the field
+  // is already low-frequency, but ~45% fewer fbm evaluations per pixel, which
+  // is meaningful since this runs full-screen every frame.)
   float b = u_blur;
-  vec3 col = field(vUv) * 0.25;
-  col += field(vUv + vec2( b, 0.)) * 0.125;
-  col += field(vUv + vec2(-b, 0.)) * 0.125;
-  col += field(vUv + vec2(0.,  b)) * 0.125;
-  col += field(vUv + vec2(0., -b)) * 0.125;
-  col += field(vUv + vec2( b,  b)) * 0.0625;
-  col += field(vUv + vec2(-b,  b)) * 0.0625;
-  col += field(vUv + vec2( b, -b)) * 0.0625;
-  col += field(vUv + vec2(-b, -b)) * 0.0625;
+  vec3 col = field(vUv) * 0.4;
+  col += field(vUv + vec2( b, 0.)) * 0.15;
+  col += field(vUv + vec2(-b, 0.)) * 0.15;
+  col += field(vUv + vec2(0.,  b)) * 0.15;
+  col += field(vUv + vec2(0., -b)) * 0.15;
   gl_FragColor=vec4(col,1.0);
 }
 `
@@ -120,9 +155,8 @@ function Backdrop() {
     return () => window.removeEventListener('pointermove', onMove)
   }, [mouse])
   // Saturation knob: the page palette is near-white, so raise this to make the
-  // colored "lights" read through the transmissive disc.
-  // Defaults match the page's DepthBackground (saturation 1.45, no extra
-  // contrast) so the glass reads the same brightness as the surrounding page.
+  // colored "lights" read through the transmissive disc. Defaults (1.45
+  // saturation, no extra contrast) match the rest of the app's warm palette.
   const bg = useControls('Backdrop', {
     saturation: { value: 1.45, min: 0, max: 5, step: 0.1 },
     contrast: { value: 1.0, min: 0.5, max: 4, step: 0.1 },
@@ -368,13 +402,19 @@ uniform vec3 uDim;
 uniform vec3 uBright;
 uniform float uHoverAngle;
 uniform float uReach;
+uniform float uFade;
 void main(){
   // Spread both ways from the cursor; the arc geometry bounds it at the start
   // (clockwise) and the end (counter-clockwise).
   float d = vAngle - uHoverAngle;
   d = abs(mod(d + 3.14159265, 6.28318531) - 3.14159265);
   float glow = 1.0 - smoothstep(uReach - 0.18, uReach + 0.18, d);
-  gl_FragColor = vec4(mix(uDim, uBright, glow), 1.0);
+  vec3 col = mix(uDim, uBright, glow);
+  // Entry fade: dissolve from the backdrop's near-white into the arc color.
+  // Must stay OPAQUE (alpha 1) — transparent objects are excluded from the
+  // glass disc's transmission pass and would vanish behind the vinyl.
+  col = mix(vec3(0.965, 0.95, 0.955), col, uFade);
+  gl_FragColor = vec4(col, 1.0);
 }
 `
 
@@ -401,6 +441,7 @@ function Arc({
       uBright: { value: new THREE.Color() },
       uHoverAngle: { value: 0 },
       uReach: { value: 0 },
+      uFade: { value: 0 },
     }),
     [],
   )
@@ -471,6 +512,7 @@ function ArcText({
 function TrackRings() {
   const tracks = useDepthStore((s) => s.tracks)
   const tracksLoading = useDepthStore((s) => s.tracksLoading)
+  const depth = useDepthStore((s) => s.depth)
   const hoveredId = useDepthStore((s) => s.hoveredTrackId)
   const groupRef = useRef<THREE.Group>(null!)
   const raysRef = useRef<THREE.Group>(null!)
@@ -533,9 +575,24 @@ function TrackRings() {
     }
   }, [camera, gl])
 
-  // Billboard the rays around world-Y so the upward plumes always face the camera.
-  useFrame(() => {
+  // Arc entry fade: 0 = dissolved into the backdrop, 1 = full color. Starts at
+  // 0 so arcs bloom in when the record appears / when returning to the album
+  // view. Pure refs — no React state, so it can never go stale.
+  const fade = useRef(0)
+
+  // Billboard the rays around world-Y so the upward plumes always face the
+  // camera, and drive the arc fade from the live depth every frame.
+  useFrame((_, delta) => {
     if (raysRef.current) raysRef.current.rotation.y = Math.atan2(camera.position.x, camera.position.z)
+
+    // Full color on the album view (depth 1); dissolve when drilled into a
+    // single track (depth 2+).
+    const target = useDepthStore.getState().depth > 1 ? 0 : 1
+    fade.current += (target - fade.current) * Math.min(1, delta * 5)
+    groupRef.current?.traverse((obj) => {
+      const mat = (obj as THREE.Mesh).material as THREE.ShaderMaterial | undefined
+      if (mat?.uniforms?.uFade) mat.uniforms.uFade.value = fade.current
+    })
   })
 
   const n = Math.max(tracks.length, 1)
@@ -545,7 +602,7 @@ function TrackRings() {
     <>
       {/* Empty-state hint — arced along the groove so it curves like the track
           arcs, lying in the disc plane (tilts with the vinyl). */}
-      {tracks.length === 0 && !tracksLoading && (
+      {depth === 1 && tracks.length === 0 && !tracksLoading && (
         <ArcText
           text="No active tracks yet — add one above to start the record"
           radius={0.72}
@@ -664,7 +721,7 @@ function TrackCaption() {
 
 // The record: frosted-glass disc + cover label + spindle. Stage transform is
 // Theatre-keyframeable; spin & float are continuous loops with Leva-tuned speeds.
-function Record() {
+function Record({ reducedMotion }: { reducedMotion: boolean }) {
   const grooveMap = useMemo(() => makeGrooveNormalMap(), [])
   const discGeo = useMemo(() => makeHoledDiscGeometry(), [])
   const labelCfg = useControls('Vinyl label', {
@@ -691,8 +748,12 @@ function Record() {
     dispersion: { value: 4.8, min: 0, max: 10, step: 0.1 }, // physical only: prismatic edges
     throughSat: { value: 7.9, min: 0, max: 15, step: 0.1, label: 'through-disc saturation' }, // physical only
     // Clarity: higher resolution = sharper background through the glass.
-    resolution: { value: 2048, min: 256, max: 2048, step: 256 },
-    samples: { value: 9, min: 1, max: 20, step: 1 },
+    // Lowered defaults from 2048/9 — the transmission material re-renders the
+    // scene into an off-screen buffer at this resolution, this many times,
+    // EVERY frame, so this is the single biggest GPU cost in the scene. Still
+    // adjustable live via Leva if more clarity is needed for a demo/recording.
+    resolution: { value: 1024, min: 256, max: 2048, step: 256 },
+    samples: { value: 4, min: 1, max: 20, step: 1 },
     transmission: { value: 0.45, min: 0, max: 1, step: 0.01 },
     thickness: { value: 0, min: 0, max: 2, step: 0.01 },
     roughness: { value: 0.47, min: 0, max: 1, step: 0.01, label: 'frost (0 clear → 1 frosted)' },
@@ -818,8 +879,12 @@ function Record() {
       stage.current.scale.setScalar(v.scale)
     }
     // Continuous loops. Spin about Z now that the disc faces the camera.
-    spin.current.rotation.z += delta * loops.spinSpeed
-    float.current.position.y = Math.sin(state.clock.elapsedTime * loops.floatSpeed) * loops.floatAmplitude
+    // Honor prefers-reduced-motion by holding the disc still (values are
+    // scaled to 0 here rather than skipped, so the Leva-tuned speeds/state
+    // remain untouched and nothing else in the data flow changes).
+    const motionScale = reducedMotion ? 0 : 1
+    spin.current.rotation.z += delta * loops.spinSpeed * motionScale
+    float.current.position.y = Math.sin(state.clock.elapsedTime * loops.floatSpeed) * loops.floatAmplitude * motionScale
     // Live through-disc saturation.
     if (shaderRef.current) shaderRef.current.uniforms.uThroughSat.value = throughSat
   })
@@ -874,6 +939,8 @@ export function VinylScene() {
   // The disc only appears once you're inside a project (depth > 0); on the
   // dashboard (depth 0) only the shared 3D backdrop shows.
   const showDisc = useDepthStore((s) => s.depth) > 0
+  const isPageVisible = useIsPageVisible()
+  const reducedMotion = usePrefersReducedMotion()
   const readoutRef = useRef<HTMLDivElement>(null)
   const poseRef = useRef<PoseSnapshot>({
     camera: { position: [0, 0, 0], lookAt: [0, 0, 0] },
@@ -994,7 +1061,17 @@ export function VinylScene() {
       <Canvas
         camera={{ position: [-0.09, -1.71, 1.19], fov: 38 }}
         gl={{ antialias: true, alpha: true }}
-        dpr={[1, 2]}            /* full retina sharpness (lower to [1,1.5] for mobile perf) */
+        // Capped from [1, 2] — at dpr 2 this full-viewport canvas plus the
+        // transmission material's off-screen render pass was doing 4x the
+        // fragment work on retina/high-DPI displays, which is a major source
+        // of GPU load (and fan noise) for something running behind the whole
+        // page. 1.5 keeps it visually sharp while cutting that cost.
+        dpr={[1, 1.5]}
+        // Stop the render loop entirely while the tab is backgrounded, rather
+        // than continuing to render an invisible canvas at full rate. Clock-
+        // driven state (spin/float/backdrop time) simply resumes from where it
+        // left off when the tab is visible again — no data/behavior change.
+        frameloop={isPageVisible ? 'always' : 'never'}
         style={{
           position: 'fixed',
           inset: 0,
@@ -1025,7 +1102,7 @@ export function VinylScene() {
           <CameraRig />
         )}
         {showBackdrop && <Backdrop />}
-        {showDisc && <Record />}
+        {showDisc && <Record reducedMotion={reducedMotion} />}
         <PoseCapture poseRef={poseRef} />
       </Canvas>
     </>
