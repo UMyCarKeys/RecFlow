@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 
 export function DashboardPage() {
-  const { projects, loading, error } = useProjects()
   const [createOpen, setCreateOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const { projects, loading, error } = useProjects(refreshKey)
   const { perProject, overall } = useTrackProgress(refreshKey)
   const setDepth = useDepthStore((s) => s.setDepth)
 
@@ -82,7 +82,7 @@ export function DashboardPage() {
           <Button className="mt-6" onClick={() => setCreateOpen(true)}>Create your first project</Button>
         </motion.div>
       ) : (
-        <div id="dashboard-project-grid" key={refreshKey} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
+        <div id="dashboard-project-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
           {projects.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <ProjectCard project={p} progress={perProject[p.id] ?? 0} />

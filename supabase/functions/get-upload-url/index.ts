@@ -6,7 +6,7 @@ const TTL_SECONDS = 300
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin') ?? ''
   const siteUrl = Deno.env.get('SITE_URL') ?? ''
-  const isAllowed = origin === siteUrl || origin.startsWith('http://localhost') || origin.endsWith('.recflow.pages.dev') || origin === 'https://recflow.pages.dev'
+  const isAllowed = origin === siteUrl || origin.startsWith('http://localhost') || origin.endsWith('.recflow.pages.dev') || origin === 'https://recflow.pages.dev' || origin === 'https://coworkermusichub.com' || origin.endsWith('.coworkermusichub.com')
   const corsHeaders = {
     'Access-Control-Allow-Origin': isAllowed ? origin : '',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

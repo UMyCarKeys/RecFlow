@@ -38,7 +38,7 @@ Idea → Demo → Mix → Final Mix → Master
 
 ## The Interface
 
-The project view renders each track as a **3D reflective vinyl disc**. The active disc spins at 33.33 RPM. A persistent player bar sits at the bottom of every page.
+Every page renders inside a persistent **3D scene**: a frosted, transmissive-glass vinyl disc that spins continuously, refracting a moving color-field backdrop rendered in the same scene. Opening a project brings the disc into view; each active track is drawn as a colored groove arc on its face, filling in as the track advances through its stages (turning gold at release), with a hover glow and click-to-drill-in interaction on each arc. Navigating from the dashboard into a project plays a short sleeve-to-vinyl transition. A persistent player bar sits at the bottom of every page.
 
 Audio streams through signed URLs from a private R2 bucket — files are never exposed as downloadable links in the network tab.
 
@@ -61,10 +61,12 @@ Audio streams through signed URLs from a private R2 bucket — files are never e
 | Technology | Purpose |
 |---|---|
 | @react-three/fiber | React renderer for Three.js |
-| @react-three/drei | Environment, OrbitControls helpers |
+| @react-three/drei | Environment, transmission material, text, OrbitControls helpers |
 | Three.js | 3D engine |
+| Theatre.js | Keyframes the disc/camera "stage" poses per navigation depth (dev-authored, ships without its editing UI) |
+| Leva | Live-tunable material/lighting/loop controls during development (control panel hidden in all builds) |
 
-The vinyl disc is a `CylinderGeometry` with `MeshStandardMaterial` (metalness 0.9, roughness 0.05) and a procedural groove normal map generated via the Canvas API. All discs render in a single `<Canvas>` for performance.
+The disc is an extruded ring (`ExtrudeGeometry`, real center hole) using a transmissive glass material (`MeshPhysicalMaterial` or drei's `MeshTransmissionMaterial`), with a procedural groove normal map — concentric ridge/valley rings plus fine hairline scratches and dings — generated via the Canvas API. It refracts a backdrop plane rendered in the same scene, so the glass shows a moving copy of the page's color field. There is a single, persistent `<Canvas>` mounted for the whole app (no separate 2D background layer) for performance.
 
 ### Audio
 
@@ -156,13 +158,15 @@ This applies all migrations in `supabase/migrations/` in order.
 ```json
 [
   {
-    "AllowedOrigins": ["https://your-site.pages.dev"],
+    "AllowedOrigins": ["https://coworkermusichub.com", "http://localhost:5173"],
     "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["Content-Type"],
     "MaxAgeSeconds": 3600
   }
 ]
 ```
+
+Add every origin you actually serve the app from (e.g. a `www.` subdomain, or a staging `*.pages.dev` deployment) — R2 needs each one listed explicitly, it doesn't support wildcard subdomain matching.
 
 ---
 
@@ -180,8 +184,10 @@ supabase secrets set R2_ACCESS_KEY_ID=your_key
 supabase secrets set R2_SECRET_ACCESS_KEY=your_secret
 supabase secrets set R2_BUCKET_NAME=recflow-audio
 supabase secrets set R2_ENDPOINT=https://your_account_id.r2.cloudflarestorage.com
-supabase secrets set SITE_URL=https://your-site.pages.dev
+supabase secrets set SITE_URL=https://coworkermusichub.com
 ```
+
+`SITE_URL` (plus the `localhost` and `*.pages.dev` fallbacks already in the function code) controls which origins the Edge Functions' CORS check allows — update it whenever the site's domain changes, and redeploy both functions afterward.
 
 ---
 
@@ -211,7 +217,7 @@ Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Cloudflare Pages → **S
 ```
 src/
 ├── components/
-│   ├── disc/        ← 3D vinyl disc (DiscScene, VinylDisc)
+│   ├── disc/        ← 3D vinyl scene (VinylScene) and the sleeve→vinyl transition (SleeveTransition)
 │   ├── track/       ← VersionCard, UploadVersionModal, StageProgress, IdeaBoard
 │   ├── comments/    ← CommentThread, CommentItem, CommentComposer
 │   ├── tasks/       ← TaskList, TaskItem, TaskComposer
@@ -219,9 +225,9 @@ src/
 │   ├── player/      ← AudioPlayer (WaveSurfer), PlayerControls
 │   ├── layout/      ← AppShell, Sidebar, PlayerBar
 │   └── ui/          ← Button, Modal, Tag, Avatar, Spinner, Toast
-├── pages/           ← Dashboard, Project (disc grid), Track (versions + comments + tasks)
+├── pages/           ← Dashboard, Project (drives the 3D vinyl via depthStore), Track (versions + comments + tasks)
 ├── hooks/           ← useAuth, useProject, useTrack, useVersions, useComments, useTasks
-├── store/           ← playerStore (Zustand), uiStore (Zustand)
+├── store/           ← depthStore + sleeveTransition (drive the 3D scene), playerStore, uiStore, chromeStore (Zustand)
 ├── types/           ← database.ts (all TypeScript types)
 └── lib/             ← supabase.ts, r2.ts, utils.ts
 supabase/

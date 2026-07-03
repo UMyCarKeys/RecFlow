@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
 import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
-import { VinylRecord } from '@/components/disc/VinylRecord'
 import { MembersModal } from '@/components/project/MembersModal'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { uploadCover } from '@/lib/uploadCover'
-import type { Track } from '@/types/database'
 
 export function ProjectPage() {
   const { id = '' } = useParams()
@@ -21,13 +18,42 @@ export function ProjectPage() {
   const navigate = useNavigate()
   const [addingTrack, setAddingTrack] = useState(false)
   const [newTrackTitle, setNewTrackTitle] = useState('')
-  const [selecting, setSelecting] = useState<Track | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
   const [coverBusy, setCoverBusy] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const setDepth = useDepthStore((s) => s.setDepth)
+  const setCoverUrl = useDepthStore((s) => s.setCoverUrl)
+  const setCoverSeed = useDepthStore((s) => s.setCoverSeed)
+  const setTracks = useDepthStore((s) => s.setTracks)
+  const setTracksLoading = useDepthStore((s) => s.setTracksLoading)
+  const setOnSelectTrack = useDepthStore((s) => s.setOnSelectTrack)
 
   useEffect(() => setDepth(1), [setDepth])
+  // Publish this project's cover to the vinyl center label; clear on leave.
+  useEffect(() => {
+    setCoverUrl(project?.cover_url ?? null)
+    setCoverSeed(id || null) // seed = project id, so the center matches the dashboard art
+    return () => {
+      setCoverUrl(null)
+      setCoverSeed(null)
+    }
+  }, [project?.cover_url, id, setCoverUrl, setCoverSeed])
+  // Publish active tracks as glowing groove strips on the 3D vinyl.
+  useEffect(() => {
+    const active = tracks.filter((t) => !t.archived)
+    setTracks(active.map((t) => ({ id: t.id, title: t.title, stage: t.stage })))
+    return () => setTracks([])
+  }, [tracks, setTracks])
+  // Publish loading so the 3D empty-state hint doesn't flash while tracks load.
+  useEffect(() => {
+    setTracksLoading(tracksLoading)
+    return () => setTracksLoading(false)
+  }, [tracksLoading, setTracksLoading])
+  // Drill into a track when its strip is clicked on the vinyl.
+  useEffect(() => {
+    setOnSelectTrack((tid) => navigate(`/project/${id}/track/${tid}`))
+    return () => setOnSelectTrack(null)
+  }, [setOnSelectTrack, navigate, id])
 
   const isOwner = !!user && !!project && project.owner_id === user.id
 
@@ -62,12 +88,6 @@ export function ProjectPage() {
 
   const activeTracks = tracks.filter((t) => !t.archived)
   const archivedCount = tracks.length - activeTracks.length
-
-  // Dive into a track: zoom the record up, then navigate
-  const handleSelect = (track: Track) => {
-    setSelecting(track)
-    setTimeout(() => navigate(`/project/${id}/track/${track.id}`), 520)
-  }
 
   if (projLoading) return <div id="project-loading" className="flex justify-center py-24"><Spinner /></div>
   if (!project) return <p className="text-muted text-sm p-8">Project not found.</p>
@@ -117,23 +137,14 @@ export function ProjectPage() {
         )}
       </div>
 
-      {/* The record — focal point */}
+      {/* The record — focal point. The disc itself (including its empty-state
+          hint and per-track groove strips) is rendered in 3D by VinylScene,
+          which reads tracks/loading state from useDepthStore (published
+          above). This area only needs to reserve layout space and show a
+          loading spinner while tracks are being fetched. */}
       <div id="project-record" className="flex-1 relative min-h-0">
-        {tracksLoading ? (
+        {tracksLoading && (
           <div className="flex justify-center py-16"><Spinner /></div>
-        ) : activeTracks.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-muted text-sm">No active tracks yet. Add one above to start the record.</p>
-          </motion.div>
-        ) : (
-          <motion.div
-            className="w-full h-full p-6"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={selecting ? { scale: 3.6, opacity: 0 } : { scale: 1, opacity: 1 }}
-            transition={{ duration: selecting ? 0.5 : 0.7, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <VinylRecord tracks={activeTracks} projectName={project.name} onSelect={handleSelect} />
-          </motion.div>
         )}
 
         {archivedCount > 0 && (
