@@ -24,6 +24,10 @@ export function PlayerBar() {
   return (
     <div
       id="player-bar"
+      // z-40 is intentionally above VinylScene's canvas (z-5 normally) and
+      // SleeveTransition's flying sleeve/vinyl overlay (z-30), so the player
+      // bar stays visible above those 3D/transition layers whenever a track
+      // is loaded, instead of being covered by them.
       className="group/player fixed bottom-0 left-0 right-0 h-14 glass-light border-t border-black/[0.06] flex items-center px-4 gap-3 z-40"
     >
       {/* Load status bar — confirms work is happening after pressing play */}

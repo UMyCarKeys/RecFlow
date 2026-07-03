@@ -50,7 +50,11 @@ function Overlay({ data }: { data: SleeveStart }) {
   }, [])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 80, pointerEvents: 'none' }}>
+    // zIndex kept below PlayerBar (z-40, PlayerBar.tsx) so the persistent
+    // player bar always stays above this transition's flying sleeve — and
+    // above VinylScene's own canvas (z-5 normally) — instead of the sleeve's
+    // down-slide passing in front of the player bar when a track is loaded.
+    <div style={{ position: 'fixed', inset: 0, zIndex: 30, pointerEvents: 'none' }}>
       {/* down-slide: once at centre (≈ when the scene mounts and the vinyl starts
           rising), the sleeve accelerates down and out of view — the two pass in
           opposite directions. */}
