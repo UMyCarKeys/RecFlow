@@ -289,6 +289,11 @@ function PoseCapture({ poseRef }: { poseRef: React.RefObject<PoseSnapshot> }) {
 // Procedural groove normal map (ported from VinylDisc): concentric ridge/valley
 // rings so the flat disc face reads as grooved vinyl. Applied to the glass, the
 // grooves perturb the refraction/highlights — visible ripples through the pane.
+// Also scatters fine hairline scratches and tiny "dings" (impact dents) across
+// the face, so the disc reads as a real, handled record rather than a pristine
+// pane of glass. All baked into the same normal map (one canvas, one texture,
+// computed once at mount) so it costs nothing per-frame and needs no extra
+// material props/uniforms on either glass path (physical or transmission).
 function makeGrooveNormalMap(): THREE.CanvasTexture {
   const size = 512
   const canvas = document.createElement('canvas')
@@ -297,6 +302,8 @@ function makeGrooveNormalMap(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d')!
   const cx = size / 2
   const cy = size / 2
+  const outerR = size / 2 - 4
+  const holeR = 26 // keep marks off the spindle hole
 
   // Neutral base — (128, 128, 255) means "no deflection from surface normal".
   ctx.fillStyle = '#8080ff'
@@ -314,6 +321,75 @@ function makeGrooveNormalMap(): THREE.CanvasTexture {
     ctx.strokeStyle = isRidge ? 'rgba(172, 172, 255, 0.5)' : 'rgba(44, 44, 188, 0.5)'
     ctx.lineWidth = 1.2
     ctx.stroke()
+  }
+
+  // Random point within the annulus between the spindle hole and the disc edge.
+  const randomDiscPoint = () => {
+    const a = Math.random() * Math.PI * 2
+    const r = holeR + Math.sqrt(Math.random()) * (outerR - holeR)
+    return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, a, r }
+  }
+
+  // Fine hairline scratches: short, faintly curved strokes at random angles.
+  // Each is nudged slightly off the neutral blue-purple along its perpendicular
+  // — a cheap-but-convincing way to fake a shallow groove catching the light,
+  // without a second highlight/shadow pass.
+  //
+  // IMPORTANT — keep these nudges subtle: this map feeds normalMap on the
+  // disc's TRANSMISSIVE glass, and that disc mesh spins continuously while
+  // the colored track arcs sit still just behind it (refracted through the
+  // glass). The concentric groove rings above are radially symmetric, so
+  // spinning them is visually a no-op (rotating a ring pattern around its own
+  // center looks identical every frame) — the arcs read as solid. Scratches/
+  // dings are scattered at random angles, i.e. NOT rotationally symmetric, so
+  // if their normal perturbation is too strong, the spinning disc visibly
+  // "bends" the refracted arc colors underneath every frame as each scratch
+  // sweeps past — reading as the arcs continuously morphing/rippling in sync
+  // with the spin. Keeping the nudge/opacity low here keeps them a faint
+  // surface detail instead of something strong enough to distort refraction.
+  const SCRATCH_COUNT = 90
+  for (let i = 0; i < SCRATCH_COUNT; i++) {
+    const { x, y } = randomDiscPoint()
+    const angle = Math.random() * Math.PI * 2
+    const len = 6 + Math.random() * 22
+    const dx = Math.cos(angle)
+    const dy = Math.sin(angle)
+    // Slight arc instead of a dead-straight line reads more like a real scuff.
+    const bow = (Math.random() - 0.5) * 6
+    const mx = x + dx * (len / 2) - dy * bow
+    const my = y + dy * (len / 2) + dx * bow
+    const ex = x + dx * len
+    const ey = y + dy * len
+    // Perpendicular nudge direction encodes which way the "groove" leans.
+    const px = -dy
+    const py = dx
+    const nudge = 6 + Math.random() * 5
+    const r = Math.max(0, Math.min(255, 128 + px * nudge))
+    const g = Math.max(0, Math.min(255, 128 + py * nudge))
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.quadraticCurveTo(mx, my, ex, ey)
+    ctx.strokeStyle = `rgba(${r | 0}, ${g | 0}, 255, ${(0.05 + Math.random() * 0.08).toFixed(2)})`
+    ctx.lineWidth = 0.4 + Math.random() * 0.5
+    ctx.stroke()
+  }
+
+  // Tiny dings: small radial dents (soft bright-centre falloff) scattered more
+  // sparsely — reads as little impact marks rather than a smooth scratch.
+  // Same rationale as above: kept low-strength so they don't visibly distort
+  // the (non-spinning) track arcs refracted through the spinning glass.
+  const DING_COUNT = 22
+  for (let i = 0; i < DING_COUNT; i++) {
+    const { x, y } = randomDiscPoint()
+    const rad = 1.5 + Math.random() * 3.5
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, rad)
+    const strength = 6 + Math.random() * 8
+    grad.addColorStop(0, `rgba(${128 + strength | 0}, ${128 + strength | 0}, 255, 0.16)`)
+    grad.addColorStop(1, 'rgba(128, 128, 255, 0)')
+    ctx.beginPath()
+    ctx.fillStyle = grad
+    ctx.arc(x, y, rad, 0, Math.PI * 2)
+    ctx.fill()
   }
 
   return new THREE.CanvasTexture(canvas)
