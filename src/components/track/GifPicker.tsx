@@ -52,7 +52,7 @@ export function GifPicker({ open, onClose, onPick }: GifPickerProps) {
           ) : results.length === 0 ? (
             <p className="text-xs text-[#6b6275] py-6 text-center">No GIFs found.</p>
           ) : (
-            <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto no-scrollbar">
+            <div className="grid grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto overscroll-contain no-scrollbar">
               {results.map((g) => (
                 <button
                   key={g.id}

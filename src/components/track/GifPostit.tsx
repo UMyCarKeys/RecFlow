@@ -26,7 +26,7 @@ export function GifPostit({ url, canEdit, onChange, onRemove }: GifPostitProps) 
           {isVideo ? (
             <video ref={videoRef} src={url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
           ) : (
-            <img src={url} alt="" className="w-full h-full object-cover" />
+            <img src={url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
           )}
         </div>
       </div>

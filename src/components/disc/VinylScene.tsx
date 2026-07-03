@@ -4,7 +4,7 @@ import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@rea
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
-import { useSleeveTransition } from '@/store/sleeveTransition'
+import { useSleeveTransition, DISC_ENTRANCE_S } from '@/store/sleeveTransition'
 import { STAGE_VALUE } from '@/lib/progress'
 import { trackHue } from '@/lib/trackColor'
 
@@ -930,8 +930,13 @@ function Record({ reducedMotion }: { reducedMotion: boolean }) {
       // Rise leads: the disc lifts UP first (fast off the start to clear the
       // sleeve), THEN the flip / scale / move-to-stage taper in. One continuous
       // motion — the two eases overlap so velocity never hits zero mid-flight.
-      const ENTER_S = 1.05
-      const p = Math.min(1, (state.clock.elapsedTime - ent.t0) / ENTER_S)
+      // ENTER_S duration lives in the sleeveTransition store module (see
+      // DISC_ENTRANCE_S) so page-level UI (ProjectPage's header) can time its
+      // own reveal to this without importing anything from this file — this
+      // file pulls in three.js/@react-three and is lazy-loaded separately, so
+      // keeping the shared constant in the small, dependency-free store
+      // module avoids re-coupling that heavy bundle to eagerly-loaded pages.
+      const p = Math.min(1, (state.clock.elapsedTime - ent.t0) / DISC_ENTRANCE_S)
       // Front-loaded vertical rise (fast, done by ~58%).
       const riseP = Math.min(1, p / 0.58)
       const riseE = 1 - Math.pow(1 - riseP, 3) // easeOutCubic

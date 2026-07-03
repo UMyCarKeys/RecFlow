@@ -1,8 +1,8 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { DashboardPage } from '@/pages/DashboardPage'
@@ -11,9 +11,17 @@ import { ProjectPage } from '@/pages/ProjectPage'
 import { TrackPage } from '@/pages/TrackPage'
 import { Spinner } from '@/components/ui/Spinner'
 
+// Lazy-loaded so its heavy deps (three.js/@react-three, WaveSurfer) are only
+// fetched once a user is actually past the AuthGuard — /login and /register
+// no longer pay for the 3D scene / audio player bundle. AppShell itself is
+// unchanged; this only defers when its module is fetched/evaluated.
+const AppShell = lazy(() =>
+  import('@/components/layout/AppShell').then((m) => ({ default: m.AppShell })),
+)
+
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth()
-  if (loading) return <div className="min-h-screen bg-surface flex items-center justify-center"><Spinner /></div>
+  if (loading) return <div className="min-h-dvh bg-surface flex items-center justify-center"><Spinner /></div>
   if (!session) return <Navigate to="/login" replace />
   return <>{children}</>
 }
@@ -35,7 +43,9 @@ export default function App() {
           <Route
             element={
               <AuthGuard>
-                <AppShell />
+                <Suspense fallback={<div className="min-h-dvh bg-surface flex items-center justify-center"><Spinner /></div>}>
+                  <AppShell />
+                </Suspense>
               </AuthGuard>
             }
           >

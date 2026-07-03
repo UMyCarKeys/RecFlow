@@ -8,7 +8,7 @@ import { SleeveTransition } from '@/components/disc/SleeveTransition'
 
 export function AppShell() {
   return (
-    <div id="app-shell" className="relative h-screen overflow-hidden text-ink">
+    <div id="app-shell" className="relative h-dvh overflow-hidden text-ink">
       {/* VinylScene's own Backdrop plane is the sole background on every page
           (it fully covers the viewport whenever showBackdrop is on); the disc
           itself only shows once you're inside a project (depth > 0). There is
@@ -20,7 +20,7 @@ export function AppShell() {
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main id="main-content" className="flex-1 overflow-y-auto pb-16">
+          <main id="main-content" className="flex-1 overflow-y-auto overscroll-contain pb-16">
             <Outlet />
           </main>
         </div>

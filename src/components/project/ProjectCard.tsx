@@ -70,7 +70,7 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               style={{ transform: 'scale(1.4)', filter: 'blur(26px) saturate(1.3) brightness(1.12)' }}
             >
               {project.cover_url ? (
-                <img src={project.cover_url} alt={project.name} className="absolute inset-0 w-full h-full object-cover" />
+                <img src={project.cover_url} alt={project.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0" style={{ backgroundImage: blobBg }} />
               )}

@@ -23,7 +23,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div id="register-page" className="min-h-screen bg-surface flex items-center justify-center p-4">
+    <div id="register-page" className="min-h-dvh bg-surface flex items-center justify-center p-4">
       <div id="register-container" className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-1 text-center">RecFlow</h1>
         <p className="text-muted text-sm text-center mb-8">Collaborative album versioning</p>

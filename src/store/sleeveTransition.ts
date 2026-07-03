@@ -6,6 +6,15 @@ import { create } from 'zustand'
  * VinylScene on the project page. The overlay lives in AppShell so it survives
  * the route change; ProjectCard starts it with the card's screen rect.
  */
+
+// Duration (seconds) of VinylScene's sleeve→vinyl entrance tumble (see the
+// `entrance` ref in Record(), VinylScene.tsx). Kept here — a tiny,
+// dependency-free store module — rather than exported from VinylScene.tsx
+// itself, so page-level UI that just wants to time a reveal against it (e.g.
+// ProjectPage's header) doesn't have to import anything from the file that
+// pulls in three.js/@react-three (which is lazy-loaded separately from the
+// rest of the app).
+export const DISC_ENTRANCE_S = 1.05
 export interface SleeveStart {
   projectId: string
   coverUrl: string | null

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
 import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
+import { useSleeveTransition, DISC_ENTRANCE_S } from '@/store/sleeveTransition'
 import { MembersModal } from '@/components/project/MembersModal'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +29,12 @@ export function ProjectPage() {
   const setTracks = useDepthStore((s) => s.setTracks)
   const setTracksLoading = useDepthStore((s) => s.setTracksLoading)
   const setOnSelectTrack = useDepthStore((s) => s.setOnSelectTrack)
+  // Captured once at mount: if we navigated here via the dashboard's sleeve
+  // transition, the 3D vinyl plays an arrival tumble (see VinylScene's
+  // `entrance` ref) — hold the header/title text hidden until that finishes
+  // so it doesn't appear before the record does. A direct visit (refresh,
+  // deep link) has no sleeve transition, so the header shows immediately.
+  const [cameFromSleeve] = useState(() => !!useSleeveTransition.getState().active)
 
   useEffect(() => setDepth(1), [setDepth])
   // Publish this project's cover to the vinyl center label; clear on leave.
@@ -94,7 +102,13 @@ export function ProjectPage() {
 
   return (
     <div id="project-page" className="h-full flex flex-col">
-      <div id="project-header" className="p-6 flex-shrink-0">
+      <motion.div
+        id="project-header"
+        className="p-6 flex-shrink-0"
+        initial={{ opacity: cameFromSleeve ? 0 : 1 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: cameFromSleeve ? DISC_ENTRANCE_S : 0, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="flex items-center justify-between">
           <div id="project-title" className="min-w-0">
             <EditableTitle
@@ -135,7 +149,7 @@ export function ProjectPage() {
             <Button type="button" variant="ghost" size="sm" onClick={() => setAddingTrack(false)}>Cancel</Button>
           </form>
         )}
-      </div>
+      </motion.div>
 
       {/* The record — focal point. The disc itself (including its empty-state
           hint and per-track groove strips) is rendered in 3D by VinylScene,

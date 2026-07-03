@@ -1,0 +1,11 @@
+# Matches the JS build target in vite.config.ts (build.target). Used by
+# autoprefixer/postcss so CSS vendor-prefixing targets the same baseline
+# instead of guessing from its own default query. Purely a build-tooling
+# config file — does not change any app code, styles, or behavior, only
+# which vendor prefixes get added to the compiled CSS.
+safari >= 14
+chrome >= 87
+firefox >= 78
+edge >= 88
+ios_saf >= 14
+not dead
