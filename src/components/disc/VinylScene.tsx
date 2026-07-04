@@ -585,7 +585,7 @@ function ArcText({
   )
 }
 
-function TrackRings() {
+function TrackRings({ showText = true }: { showText?: boolean }) {
   const tracks = useDepthStore((s) => s.tracks)
   const tracksLoading = useDepthStore((s) => s.tracksLoading)
   const depth = useDepthStore((s) => s.depth)
@@ -678,7 +678,7 @@ function TrackRings() {
     <>
       {/* Empty-state hint — arced along the groove so it curves like the track
           arcs, lying in the disc plane (tilts with the vinyl). */}
-      {depth === 1 && tracks.length === 0 && !tracksLoading && (
+      {showText && depth === 1 && tracks.length === 0 && !tracksLoading && (
         <ArcText
           text="No active tracks yet — add one above to start the record"
           radius={0.72}
@@ -797,12 +797,19 @@ function TrackCaption() {
 
 // The record: frosted-glass disc + cover label + spindle. Stage transform is
 // Theatre-keyframeable; spin & float are continuous loops with Leva-tuned speeds.
-function Record({ reducedMotion }: { reducedMotion: boolean }) {
+function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?: boolean }) {
   const grooveMap = useMemo(() => makeGrooveNormalMap(), [])
   const discGeo = useMemo(() => makeHoledDiscGeometry(), [])
   const labelCfg = useControls('Vinyl label', {
     wash: { value: 0.35, min: 0, max: 1, step: 0.05 },
   })
+  // Local low-power heuristic for material defaults inside the Record.
+  const isLowPowerLocal = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    const mem = (navigator as any).deviceMemory ?? 8
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent)
+    return mem < 4 || isMobile
+  }, [])
   const stage = useRef<THREE.Group>(null!)
   const float = useRef<THREE.Group>(null!)
   const spin = useRef<THREE.Group>(null!)
@@ -828,9 +835,9 @@ function Record({ reducedMotion }: { reducedMotion: boolean }) {
     // scene into an off-screen buffer at this resolution, this many times,
     // EVERY frame, so this is the single biggest GPU cost in the scene. Still
     // adjustable live via Leva if more clarity is needed for a demo/recording.
-    resolution: { value: 1024, min: 256, max: 2048, step: 256 },
-    samples: { value: 4, min: 1, max: 20, step: 1 },
-    transmission: { value: 0.45, min: 0, max: 1, step: 0.01 },
+    resolution: { value: isLowPowerLocal ? 512 : 1024, min: 256, max: 2048, step: 256 },
+    samples: { value: isLowPowerLocal ? 2 : 4, min: 1, max: 20, step: 1 },
+    transmission: { value: isLowPowerLocal ? 0.35 : 0.45, min: 0, max: 1, step: 0.01 },
     thickness: { value: 0, min: 0, max: 2, step: 0.01 },
     roughness: { value: 0.47, min: 0, max: 1, step: 0.01, label: 'frost (0 clear → 1 frosted)' },
     grooveDepth: { value: 0.7, min: 0, max: 4, step: 0.1 },
@@ -1003,7 +1010,7 @@ function Record({ reducedMotion }: { reducedMotion: boolean }) {
           <CenterLabel wash={labelCfg.wash} />
         </group>
         {/* Track groove strips — static (outside spin) so they stay readable. */}
-        <TrackRings />
+        <TrackRings showText={showText ?? true} />
       </group>
     </group>
   )
@@ -1017,6 +1024,21 @@ export function VinylScene() {
   const nav = useControls('Camera', {
     adjust: { value: false, label: 'adjust (orbit / zoom / walk)' },
   })
+  // Lightweight device-power detection to pick safer defaults.
+  const isLowPower = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    const mem = (navigator as any).deviceMemory ?? 8
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent)
+    return mem < 4 || isMobile
+  }, [])
+
+  // Hide heavy text/font rendering during the sleeve entrance to avoid extra work.
+  const [showText, setShowText] = useState(() => !useSleeveTransition.getState().active)
+  useEffect(() => {
+    if (showText) return
+    const t = setTimeout(() => setShowText(true), DISC_ENTRANCE_S * 1000 + 120)
+    return () => clearTimeout(t)
+  }, [showText])
   // The disc only appears once you're inside a project (depth > 0); on the
   // dashboard (depth 0) only the shared 3D backdrop shows.
   const showDisc = useDepthStore((s) => s.depth) > 0
@@ -1139,15 +1161,16 @@ export function VinylScene() {
         />
       )}
       <TrackCaption />
-      <Canvas
+      {/* Cap DPR for performance — lower on low-power devices. */}
+      {(() => {
+        /* compute maxDpr in-place so JSX stays tidy */
+        const maxDpr = typeof window !== 'undefined' ? (isLowPower ? 1 : Math.min(1.2, window.devicePixelRatio || 1)) : 1
+        return (
+          <Canvas
         camera={{ position: [-0.09, -1.71, 1.19], fov: 38 }}
         gl={{ antialias: true, alpha: true }}
-        // Capped from [1, 2] — at dpr 2 this full-viewport canvas plus the
-        // transmission material's off-screen render pass was doing 4x the
-        // fragment work on retina/high-DPI displays, which is a major source
-        // of GPU load (and fan noise) for something running behind the whole
-        // page. 1.5 keeps it visually sharp while cutting that cost.
-        dpr={[1, 1.5]}
+        // Capped DPR — keep visually sharp while cutting high-DPI cost.
+        dpr={[1, maxDpr]}
         // Stop the render loop entirely while the tab is backgrounded, rather
         // than continuing to render an invisible canvas at full rate. Clock-
         // driven state (spin/float/backdrop time) simply resumes from where it
@@ -1183,9 +1206,11 @@ export function VinylScene() {
           <CameraRig />
         )}
         {showBackdrop && <Backdrop />}
-        {showDisc && <Record reducedMotion={reducedMotion} />}
+        {showDisc && <Record reducedMotion={reducedMotion} showText={showText} />}
         <PoseCapture poseRef={poseRef} />
-      </Canvas>
+          </Canvas>
+        )
+      })()}
     </>
   )
 }

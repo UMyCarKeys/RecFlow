@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { coverSpec } from '@/lib/cover'
+import { coverSpec, coverBackground } from '@/lib/cover'
 import type { Project } from '@/types/database'
 import { useSleeveTransition } from '@/store/sleeveTransition'
 
@@ -18,7 +18,7 @@ interface ProjectCardProps {
  * (they live in git history if ever wanted back).
  */
 export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
-  const spec = useMemo(() => coverSpec(project.id), [project.id])
+  const spec = useMemo(() => coverSpec(project.id), [project.id]) // spec.pop is used below for a seeded accent glow, independent of cover_url
   const pct = Math.round(progress * 100)
   const startTransition = useSleeveTransition((s) => s.start)
   const activeTransition = useSleeveTransition((s) => s.active)
@@ -28,6 +28,8 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
   // modified clicks (new tab etc.) keep normal link behaviour.
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    // Guard against starting a second transition while one is active
+    if (useSleeveTransition.getState().active) return
     e.preventDefault()
     const cover = document.getElementById(`project-${project.id}-cover`)
     const r = (cover ?? e.currentTarget).getBoundingClientRect()
@@ -37,14 +39,6 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
       rect: { x: r.left, y: r.top, w: r.width, h: r.height },
     })
   }
-
-  const blobBg = spec.blobs
-    .map((b) => `radial-gradient(circle at ${b.x}% ${b.y}%, ${b.color}${b.alpha} 0%, ${b.color}00 ${b.spread}%)`)
-    .concat([
-      `linear-gradient(${spec.sweepAngle}deg, ${spec.sweep}33 0%, transparent 60%)`,
-      'linear-gradient(135deg, #241f2b, #1a1620)',
-    ])
-    .join(', ')
 
   return (
     <motion.div
@@ -72,7 +66,7 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               {project.cover_url ? (
                 <img src={project.cover_url} alt={project.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                <div className="absolute inset-0" style={{ backgroundImage: blobBg }} />
+                <div className="absolute inset-0" style={{ backgroundImage: coverBackground(spec).bg }} />
               )}
             </div>
 
@@ -91,6 +85,24 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
               className="absolute inset-0"
               style={{ background: 'linear-gradient(125deg, rgba(255,244,230,0.28) 0%, rgba(255,255,255,0) 38%)' }}
             />
+
+            {/* bright "pop" accent — a small seeded neon-bright glow tucked into the
+                lower-right corner, opposite the warm key light, so every
+                generated (non-uploaded) cover carries one unique bright
+                accent color alongside its warm palette. Screen blend keeps
+                it additive-only (never darkens), and the tight falloff/low
+                alpha keep it a subtle fleck rather than a wash across the
+                tile. Only applied to the seeded artwork — real uploaded
+                covers keep their own colors untouched. */}
+            {!project.cover_url && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `radial-gradient(circle at 88% 90%, ${coverBackground(spec).pop}55 0%, ${coverBackground(spec).pop}00 42%)`,
+                  mixBlendMode: 'screen',
+                }}
+              />
+            )}
 
             {/* glass edge highlights — sells the 3D slab */}
             <div
