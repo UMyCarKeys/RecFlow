@@ -21,14 +21,20 @@ export const DISC_ENTRANCE_S = 1.05
 export const SLEEVE_NAV_MS = 420
 export const SLEEVE_DONE_MS = 1300
 
+/** How much earlier than the disc's full settle the UI/text reveal begins —
+ * the fade overlaps the tail of the entrance instead of waiting it out. */
+export const REVEAL_LEAD_S = 0.9
+
+/** Seconds after the transition clears until the scene enables its 3D text. */
+export const TEXT_REVEAL_AFTER_CLEAR_S = Math.max(0, DISC_ENTRANCE_S + 0.12 - REVEAL_LEAD_S)
+
 /**
  * Seconds AFTER ProjectPage mounts (which happens ≈ SLEEVE_NAV_MS into the
- * transition) until the in-scene 3D text starts fading in: the scene enables
- * text DISC_ENTRANCE_S + 0.12s after the transition clears at SLEEVE_DONE_MS.
- * Page UI (ProjectPage's header) delays its own reveal by this same amount so
- * the header and the on-record text arrive together.
+ * transition) until the in-scene 3D text starts fading in. Page UI
+ * (ProjectPage's header) delays its own reveal by this same amount so the
+ * header and the on-record text arrive together.
  */
-export const UI_REVEAL_DELAY_S = (SLEEVE_DONE_MS - SLEEVE_NAV_MS) / 1000 + DISC_ENTRANCE_S + 0.12
+export const UI_REVEAL_DELAY_S = (SLEEVE_DONE_MS - SLEEVE_NAV_MS) / 1000 + TEXT_REVEAL_AFTER_CLEAR_S
 export interface SleeveStart {
   projectId: string
   coverUrl: string | null

@@ -4,7 +4,7 @@ import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@rea
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
-import { useSleeveTransition, DISC_ENTRANCE_S } from '@/store/sleeveTransition'
+import { useSleeveTransition, DISC_ENTRANCE_S, TEXT_REVEAL_AFTER_CLEAR_S } from '@/store/sleeveTransition'
 import { STAGE_VALUE } from '@/lib/progress'
 import { trackHue } from '@/lib/trackColor'
 
@@ -1142,7 +1142,7 @@ export function VinylScene() {
     const t = setTimeout(() => {
       console.debug('[VinylScene] enabling text render after sleeve transition')
       setShowText(true)
-    }, DISC_ENTRANCE_S * 1000 + 120)
+    }, TEXT_REVEAL_AFTER_CLEAR_S * 1000)
 
     return () => clearTimeout(t)
   }, [activeTransition, showText])
