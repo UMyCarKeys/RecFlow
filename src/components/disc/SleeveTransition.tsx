@@ -39,19 +39,16 @@ export function SleeveTransition() {
 
   useEffect(() => {
     if (!activeProjectId) return
-    console.debug('[SleeveTransition] mounted overlay for', { projectId: activeProjectId })
     const nav = setTimeout(() => navigateRef.current(`/project/${activeProjectId}`), NAV_MS)
-    const done = setTimeout(() => {
-      console.debug('[SleeveTransition] clearing overlay for', { projectId: activeProjectId })
-      useSleeveTransition.getState().clear()
-    }, DONE_MS)
+    const done = setTimeout(() => useSleeveTransition.getState().clear(), DONE_MS)
     // Failsafe: if the scene never acknowledges (crash, fast back-navigation,
     // disc never became visible), force the handshake through so the store
-    // can't be left stuck with a lingering invisible overlay.
+    // can't be left stuck with a lingering invisible overlay. Firing at all is
+    // an anomaly, so it warns (kept in production).
     const failsafe = setTimeout(() => {
       const st = useSleeveTransition.getState()
       if (st.active?.projectId === activeProjectId) {
-        console.debug('[SleeveTransition] failsafe clear for', { projectId: activeProjectId })
+        console.warn('[SleeveTransition] handshake never completed — failsafe clear', { projectId: activeProjectId })
         st.acknowledge() // pendingClear path fully resets; otherwise marks consumed
         const after = useSleeveTransition.getState()
         if (after.active) after.clear()

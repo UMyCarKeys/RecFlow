@@ -4,7 +4,10 @@ import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@rea
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
-import { useSleeveTransition, DISC_ENTRANCE_S } from '@/store/sleeveTransition'
+import { useSleeveTransition, DISC_ENTRANCE_S, TEXT_REVEAL_AFTER_CLEAR_S } from '@/store/sleeveTransition'
+// Bundled locally (Noto Sans, OFL) so 3D text never fetches from a CDN at
+// runtime — the jsDelivr font request was a prod CSP/reliability liability.
+import textFontUrl from '@/assets/fonts/text-sans.woff'
 import { STAGE_VALUE } from '@/lib/progress'
 import { trackHue } from '@/lib/trackColor'
 
@@ -637,6 +640,7 @@ function ArcText({
             position={[Math.cos(theta) * radius, Math.sin(theta) * radius, 0]}
             rotation={[0, 0, theta + Math.PI / 2]}
             fontSize={fontSize}
+            font={textFontUrl}
             anchorX="center"
             anchorY="middle"
             color={color}
@@ -1130,20 +1134,11 @@ export function VinylScene() {
 
   useEffect(() => {
     if (activeTransition) {
-      if (showText) {
-        console.debug('[VinylScene] deferring text render during sleeve transition', {
-          projectId: activeTransition.projectId,
-        })
-        setShowText(false)
-      }
+      if (showText) setShowText(false)
       return
     }
 
-    const t = setTimeout(() => {
-      console.debug('[VinylScene] enabling text render after sleeve transition')
-      setShowText(true)
-    }, DISC_ENTRANCE_S * 1000 + 120)
-
+    const t = setTimeout(() => setShowText(true), TEXT_REVEAL_AFTER_CLEAR_S * 1000)
     return () => clearTimeout(t)
   }, [activeTransition, showText])
 
@@ -1159,13 +1154,9 @@ export function VinylScene() {
       return
     }
     if (ackedProjectId.current === activeTransition.projectId) return
-    if (!showDisc) {
-      console.debug('[VinylScene] waiting to acknowledge until disc is visible', { projectId: activeTransition.projectId })
-      return
-    }
+    if (!showDisc) return // acknowledge only once the disc is actually visible
 
     ackedProjectId.current = activeTransition.projectId
-    console.debug('[VinylScene] acknowledging sleeve transition', { projectId: activeTransition.projectId })
     useSleeveTransition.getState().acknowledge()
   }, [activeTransition, showDisc])
   const reducedMotion = usePrefersReducedMotion()
@@ -1183,8 +1174,8 @@ export function VinylScene() {
         .then((mod) => {
           const preload = (mod as { preloadFont?: (opts: object, cb: () => void) => void }).preloadFont
           preload?.(
-            { characters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 —–-.,'!?()" },
-            () => console.debug('[VinylScene] 3D text font preloaded'),
+            { font: textFontUrl, characters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 —–-.,'!?()" },
+            () => {},
           )
         })
         .catch(() => {})

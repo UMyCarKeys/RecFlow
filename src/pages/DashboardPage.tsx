@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useProjects } from '@/hooks/useProject'
 import { useTrackProgress } from '@/hooks/useTrackProgress'
 import { useDepthStore } from '@/store/depthStore'
+import { useSleeveTransition } from '@/store/sleeveTransition'
 import { ProjectCard } from '@/components/project/ProjectCard'
 import { CreateProjectModal } from '@/components/project/CreateProjectModal'
 import { Button } from '@/components/ui/Button'
@@ -15,6 +16,9 @@ export function DashboardPage() {
   const { projects, loading, error } = useProjects(refreshKey)
   const { perProject } = useTrackProgress(refreshKey)
   const setDepth = useDepthStore((s) => s.setDepth)
+  // Set the moment a card is clicked (ProjectCard starts the sleeve transition):
+  // the header UI and all unselected tiles fade out while the clone flies.
+  const departing = useSleeveTransition((s) => s.active)
 
   useEffect(() => setDepth(0), [setDepth])
 
@@ -23,13 +27,18 @@ export function DashboardPage() {
 
   return (
     <div id="dashboard" className="p-8 max-w-6xl mx-auto">
-      <div id="dashboard-header" className="flex items-end justify-between mb-7">
+      <motion.div
+        id="dashboard-header"
+        className="flex items-end justify-between mb-7"
+        animate={{ opacity: departing ? 0 : 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         <div id="dashboard-title">
           <h1 className="text-3xl font-light tracking-wide text-[#1a1620]">Projects</h1>
           <p className="text-[#6b6275] text-sm mt-1.5 font-light">Your album workspaces</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
-      </div>
+      </motion.div>
 
       {loading ? (
         <div id="dashboard-loading" className="flex justify-center py-16"><Spinner /></div>
@@ -61,11 +70,26 @@ export function DashboardPage() {
         </motion.div>
       ) : (
         <div id="dashboard-project-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7">
-          {projects.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <ProjectCard project={p} progress={perProject[p.id] ?? 0} />
-            </motion.div>
-          ))}
+          {projects.map((p, i) => {
+            const isSelected = departing?.projectId === p.id
+            return (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: departing ? 0 : 1, y: 0 }}
+                // Departing: the clicked card hides instantly (its flying clone
+                // replaces it, so a fade would show a duplicate); the rest fade
+                // out smoothly. Otherwise: the staggered entrance.
+                transition={
+                  departing
+                    ? { duration: isSelected ? 0 : 0.35, ease: 'easeOut' }
+                    : { delay: i * 0.05 }
+                }
+              >
+                <ProjectCard project={p} progress={perProject[p.id] ?? 0} />
+              </motion.div>
+            )
+          })}
         </div>
       )}
 
