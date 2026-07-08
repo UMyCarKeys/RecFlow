@@ -13,15 +13,13 @@ export function DashboardPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const { projects, loading, error } = useProjects(refreshKey)
-  const { perProject, overall } = useTrackProgress(refreshKey)
+  const { perProject } = useTrackProgress(refreshKey)
   const setDepth = useDepthStore((s) => s.setDepth)
 
   useEffect(() => setDepth(0), [setDepth])
 
   // Re-trigger fetch on create by bumping key — simpler than a callback chain
   const handleCreated = () => setRefreshKey((k) => k + 1)
-
-  const overallPct = Math.round(overall * 100)
 
   return (
     <div id="dashboard" className="p-8 max-w-6xl mx-auto">
@@ -32,26 +30,6 @@ export function DashboardPage() {
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </div>
-
-      {/* Overall progress — matched to one cover-tile width */}
-      {projects.length > 0 && (
-        <div className="mb-9 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5">
-          <div id="dashboard-overall-progress" className="col-span-1">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-light tracking-wide text-[#6b6275] uppercase">Overall</span>
-              <span className="text-xs font-medium text-[#1a1620]">{overallPct}%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-black/10 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-spectrum"
-                initial={{ width: 0 }}
-                animate={{ width: `${overallPct}%` }}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <div id="dashboard-loading" className="flex justify-center py-16"><Spinner /></div>

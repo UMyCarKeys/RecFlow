@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { coverSpec } from '@/lib/cover'
-import { useSleeveTransition, type SleeveStart } from '@/store/sleeveTransition'
+import { coverSpec, coverBackground } from '@/lib/cover'
+import { useSleeveTransition, SLEEVE_NAV_MS, SLEEVE_DONE_MS, type SleeveStart } from '@/store/sleeveTransition'
 
 /**
  * The dashboard → project transition overlay. Timeline (seconds):
@@ -15,8 +15,10 @@ import { useSleeveTransition, type SleeveStart } from '@/store/sleeveTransition'
  */
 const FLY_S = 0.42
 const DOWN_S = 0.62
-const NAV_MS = 420
-const DONE_MS = 1300
+// Route change + store clear moments live in the store module (shared with the
+// page-UI reveal timing) so header/text sync can't drift from the overlay.
+const NAV_MS = SLEEVE_NAV_MS
+const DONE_MS = SLEEVE_DONE_MS
 
 // Gentle easeInOut — glides to centre instead of the sharp quint decel.
 const EASE = [0.5, 0.05, 0.2, 1] as const
@@ -25,18 +27,42 @@ const DOWN_EASE = [0.4, 0, 1, 1] as const
 
 export function SleeveTransition() {
   const active = useSleeveTransition((s) => s.active)
-  const clear = useSleeveTransition((s) => s.clear)
+  const activeProjectId = active?.projectId ?? null
   const navigate = useNavigate()
+  // navigate's identity changes when the route changes — which THIS transition
+  // triggers at NAV_MS. Reading it through a ref (and keying the effect on the
+  // project id string only) stops the effect from tearing down and re-running
+  // mid-flight, which was double-logging "mounted overlay" and re-scheduling
+  // the clear timer later than intended.
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
 
   useEffect(() => {
-    if (!active) return
-    const nav = setTimeout(() => navigate(`/project/${active.projectId}`), NAV_MS)
-    const done = setTimeout(clear, DONE_MS)
+    if (!activeProjectId) return
+    console.debug('[SleeveTransition] mounted overlay for', { projectId: activeProjectId })
+    const nav = setTimeout(() => navigateRef.current(`/project/${activeProjectId}`), NAV_MS)
+    const done = setTimeout(() => {
+      console.debug('[SleeveTransition] clearing overlay for', { projectId: activeProjectId })
+      useSleeveTransition.getState().clear()
+    }, DONE_MS)
+    // Failsafe: if the scene never acknowledges (crash, fast back-navigation,
+    // disc never became visible), force the handshake through so the store
+    // can't be left stuck with a lingering invisible overlay.
+    const failsafe = setTimeout(() => {
+      const st = useSleeveTransition.getState()
+      if (st.active?.projectId === activeProjectId) {
+        console.debug('[SleeveTransition] failsafe clear for', { projectId: activeProjectId })
+        st.acknowledge() // pendingClear path fully resets; otherwise marks consumed
+        const after = useSleeveTransition.getState()
+        if (after.active) after.clear()
+      }
+    }, DONE_MS + 1500)
     return () => {
       clearTimeout(nav)
       clearTimeout(done)
+      clearTimeout(failsafe)
     }
-  }, [active, navigate, clear])
+  }, [activeProjectId])
 
   if (!active) return null
   return <Overlay key={active.projectId} data={active} />
@@ -83,16 +109,11 @@ function Overlay({ data }: { data: SleeveStart }) {
 // (heavily diffused art + frosted film + warm key light) so the lift-off from
 // the card is seamless.
 function SleeveFace({ coverUrl, seed }: { coverUrl: string | null; seed: string }) {
-  const bg = useMemo(() => {
-    if (coverUrl) return null
-    const spec = coverSpec(seed)
-    return spec.blobs
-      .map((b) => `radial-gradient(circle at ${b.x}% ${b.y}%, ${b.color}${b.alpha} 0%, ${b.color}00 ${b.spread}%)`)
-      .concat([
-        `linear-gradient(${spec.sweepAngle}deg, ${spec.sweep}33 0%, transparent 60%)`,
-        'linear-gradient(135deg, #241f2b, #1a1620)',
-      ])
-      .join(', ')
+  // Only computed for seeded (non-uploaded) artwork — bg and pop stay null
+  // when a real cover image is set, so it keeps its own colors untouched.
+  const { bg, pop } = useMemo(() => {
+    if (coverUrl) return { bg: null, pop: null }
+    return coverBackground(coverSpec(seed))
   }, [coverUrl, seed])
 
   return (
@@ -120,6 +141,19 @@ function SleeveFace({ coverUrl, seed }: { coverUrl: string | null; seed: string 
           background: 'linear-gradient(125deg, rgba(255,244,230,0.28) 0%, rgba(255,255,255,0) 38%)',
         }}
       />
+      {/* Same seeded bright "pop" accent as the dashboard card (ProjectCard),
+          so the sleeve doesn't visually change identity as it lifts off the
+          card and flies to centre-front. */}
+      {pop && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `radial-gradient(circle at 88% 90%, ${pop}55 0%, ${pop}00 42%)`,
+            mixBlendMode: 'screen',
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',

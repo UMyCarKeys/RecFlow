@@ -15,6 +15,20 @@ import { create } from 'zustand'
 // pulls in three.js/@react-three (which is lazy-loaded separately from the
 // rest of the app).
 export const DISC_ENTRANCE_S = 1.05
+
+// Overlay timeline (ms), shared with SleeveTransition.tsx: route change happens
+// at SLEEVE_NAV_MS; the transition store clears at SLEEVE_DONE_MS.
+export const SLEEVE_NAV_MS = 420
+export const SLEEVE_DONE_MS = 1300
+
+/**
+ * Seconds AFTER ProjectPage mounts (which happens ≈ SLEEVE_NAV_MS into the
+ * transition) until the in-scene 3D text starts fading in: the scene enables
+ * text DISC_ENTRANCE_S + 0.12s after the transition clears at SLEEVE_DONE_MS.
+ * Page UI (ProjectPage's header) delays its own reveal by this same amount so
+ * the header and the on-record text arrive together.
+ */
+export const UI_REVEAL_DELAY_S = (SLEEVE_DONE_MS - SLEEVE_NAV_MS) / 1000 + DISC_ENTRANCE_S + 0.12
 export interface SleeveStart {
   projectId: string
   coverUrl: string | null
@@ -23,12 +37,37 @@ export interface SleeveStart {
 
 interface SleeveTransitionState {
   active: SleeveStart | null
+  launched: boolean
+  consumed: boolean
+  pendingClear: boolean
   start: (s: SleeveStart) => void
+  acknowledge: () => void
   clear: () => void
 }
 
 export const useSleeveTransition = create<SleeveTransitionState>((set) => ({
   active: null,
-  start: (active) => set({ active }),
-  clear: () => set({ active: null }),
+  launched: false,
+  consumed: false,
+  pendingClear: false,
+  start: (active) => {
+    console.debug('[sleeveTransition] start', { projectId: active.projectId, rect: active.rect })
+    return set({ active, launched: true, consumed: false, pendingClear: false })
+  },
+  acknowledge: () =>
+    set((state) => {
+      console.debug('[sleeveTransition] acknowledge', { active: state.active, pendingClear: state.pendingClear })
+      if (state.pendingClear) {
+        return { active: null, launched: false, consumed: false, pendingClear: false }
+      }
+      return { ...state, consumed: true }
+    }),
+  clear: () =>
+    set((state) => {
+      console.debug('[sleeveTransition] clear', { active: state.active, consumed: state.consumed, pendingClear: state.pendingClear })
+      if (state.consumed) {
+        return { active: null, launched: false, consumed: false, pendingClear: false }
+      }
+      return { ...state, pendingClear: true }
+    }),
 }))

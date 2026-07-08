@@ -12,6 +12,7 @@ export function useProjects(refreshKey = 0) {
     supabase
       .from('projects')
       .select('*')
+      .eq('archived', false)
       .order('created_at', { ascending: false })
       .then(({ data, error: e }) => {
         if (e) setError(e.message)
@@ -66,11 +67,16 @@ export function useProject(projectId: string) {
     return { error }
   }
 
-  const updateProject = async (updates: Partial<Pick<Project, 'name' | 'description' | 'cover_url' | 'name_history'>>) => {
+  const updateProject = async (updates: Partial<Pick<Project, 'name' | 'description' | 'cover_url' | 'name_history' | 'archived'>>) => {
     const { data, error } = await supabase.from('projects').update(updates).eq('id', projectId).select().single()
     if (!error && data) setProject(data as Project)
     return { error }
   }
 
-  return { project, members, loading, addMember, updateMemberRole, removeMember, updateProject }
+  const deleteProject = async () => {
+    const { error } = await supabase.from('projects').delete().eq('id', projectId)
+    return { error }
+  }
+
+  return { project, members, loading, addMember, updateMemberRole, removeMember, updateProject, deleteProject }
 }

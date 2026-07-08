@@ -26,8 +26,13 @@ function mulberry32(a: number) {
 
 // Warm Spectrum hues
 const HUES = ['#ff8a6b', '#ffc46b', '#ff6b9d', '#b88cff', '#ff9e7d', '#ffd27d', '#f07a8f']
-// Bright "pop" accents that contrast the warm covers and stand out from the bg
-const POP_HUES = ['#c6ff3c', '#7cff9b', '#3cffe0', '#ffe14d', '#7cd4ff', '#b6ff3c']
+// Bright "pop" accents — one small seeded neon-bright glow per cover (see
+// coverSpec's `pop` field / its use in ProjectCard and SleeveTransition).
+// Kept in the SAME warm coral/amber/rose/violet family as the app's own
+// accent palette (tailwind.config.js: #ff8a6b/#ffc46b/#ff6b9d/#b88cff) but
+// pushed brighter/more saturated, so each cover's accent reads as a vivid
+// highlight of the UI's own palette rather than a clashing, unrelated hue.
+const POP_HUES = ['#ff3d81', '#ffb020', '#ff5c38', '#c65cff', '#ff2e63', '#ffd60a']
 
 export type MarkId =
   | 'barcode'
@@ -106,6 +111,17 @@ const OTHER_MARKS: MarkId[] = [
 const CORNERS: Corner[] = ['tl', 'tr', 'bl', 'br']
 const CODE_LETTERS = 'ABCDEFGHJKLMNPRSTUVXZ'
 const INK = '#f4ece8'
+
+export function coverBackground(spec: CoverSpec): { bg: string; pop: string } {
+  const bg = spec.blobs
+    .map((b) => `radial-gradient(circle at ${b.x}% ${b.y}%, ${b.color}${b.alpha} 0%, ${b.color}00 ${b.spread}%)`)
+    .concat([
+      `linear-gradient(${spec.sweepAngle}deg, ${spec.sweep}33 0%, transparent 60%)`,
+      'linear-gradient(135deg, #241f2b, #1a1620)',
+    ])
+    .join(', ')
+  return { bg, pop: spec.pop }
+}
 
 export function coverSpec(id: string): CoverSpec {
   const rnd = mulberry32(hashStr(id))

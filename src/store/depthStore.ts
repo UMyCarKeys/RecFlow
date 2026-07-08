@@ -62,7 +62,13 @@ export const useDepthStore = create<DepthState>((set) => ({
   setCoverSeed: (coverSeed) => set({ coverSeed }),
   tracks: [],
   setTracks: (tracks) => set({ tracks }),
-  tracksLoading: false,
+  // Defaults to TRUE so the vinyl never trusts an empty tracks array before a
+  // page has published a loaded state: on project entry there are a few frames
+  // where tracks=[] simply because the page's effect hasn't run yet, and with
+  // a false default the "no tracks yet" 3D text mounted for those frames —
+  // triggering troika's font parse + GPU glyph generation at the heaviest
+  // moment of the transition (a context-loss contributor), then vanishing.
+  tracksLoading: true,
   setTracksLoading: (tracksLoading) => set({ tracksLoading }),
   hoveredTrackId: null,
   setHoveredTrackId: (hoveredTrackId) => set({ hoveredTrackId }),
