@@ -56,13 +56,9 @@ export const useSleeveTransition = create<SleeveTransitionState>((set) => ({
   launched: false,
   consumed: false,
   pendingClear: false,
-  start: (active) => {
-    console.debug('[sleeveTransition] start', { projectId: active.projectId, rect: active.rect })
-    return set({ active, launched: true, consumed: false, pendingClear: false })
-  },
+  start: (active) => set({ active, launched: true, consumed: false, pendingClear: false }),
   acknowledge: () =>
     set((state) => {
-      console.debug('[sleeveTransition] acknowledge', { active: state.active, pendingClear: state.pendingClear })
       if (state.pendingClear) {
         return { active: null, launched: false, consumed: false, pendingClear: false }
       }
@@ -70,7 +66,6 @@ export const useSleeveTransition = create<SleeveTransitionState>((set) => ({
     }),
   clear: () =>
     set((state) => {
-      console.debug('[sleeveTransition] clear', { active: state.active, consumed: state.consumed, pendingClear: state.pendingClear })
       if (state.consumed) {
         return { active: null, launched: false, consumed: false, pendingClear: false }
       }
