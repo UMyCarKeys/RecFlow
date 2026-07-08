@@ -21,6 +21,8 @@ while a **Blocker** is open; "ship-with" issues get a tracked ticket.
 - [ ] Prod build points at the **production** Supabase project
       (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` on the host, never
       committed)
+- [ ] `VITE_SENTRY_DSN` set in the host's BUILD environment (Vite bakes env at
+      build time) — error reporting silently stays off without it
 - [ ] Staging/dev use a separate Supabase project so QA can't touch real data
 - [ ] Supabase Auth → URL configuration lists the production domain
       (redirects break silently otherwise)

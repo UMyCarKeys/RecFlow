@@ -1,6 +1,10 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { initErrorReporting } from './lib/errorReporting'
+
+// No-op unless this is a production build with VITE_SENTRY_DSN set.
+initErrorReporting()
 
 // No <StrictMode>: its dev-only double-mounting runs every effect twice —
 // duplicate data fetches on each page load and, worse for this app, double
