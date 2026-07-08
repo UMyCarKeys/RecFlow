@@ -31,6 +31,11 @@ import { trackHue } from '@/lib/trackColor'
 // The disc's resting "stage" transform (identity). Camera/entrance handle motion.
 const DISC_POSE = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 }
 
+// Module-level (not a ref): the troika font warm-up must run exactly once per
+// page load, even across StrictMode's double effect-run and canvas remounts —
+// each run re-parsed the font and touched the GPU, feeding the context churn.
+let fontPreloadStarted = false
+
 // --- perf / power helpers -------------------------------------------------
 // This scene renders a full-screen WebGL canvas with a per-pixel noise shader
 // plus a transmissive-glass material every frame, which can push GPU/CPU (and
@@ -51,6 +56,38 @@ function useIsPageVisible(): boolean {
     return () => document.removeEventListener('visibilitychange', onChange)
   }, [])
   return visible
+}
+
+// Recovers from silent WebGL context loss (the canvas just blanks, usually no
+// console error): preventDefault on `webglcontextlost` is REQUIRED for the
+// browser to even attempt a restore; if the restore doesn't arrive shortly,
+// we fall back to fully remounting the Canvas so the scene always comes back.
+function ContextGuard({ onNeedsRemount }: { onNeedsRemount: () => void }) {
+  const gl = useThree((s) => s.gl)
+  useEffect(() => {
+    const el = gl.domElement
+    let restoreTimer: number | undefined
+    const onLost = (e: Event) => {
+      e.preventDefault()
+      console.warn('[VinylScene] WebGL context lost — waiting for restore')
+      restoreTimer = window.setTimeout(() => {
+        console.warn('[VinylScene] context not restored — remounting canvas')
+        onNeedsRemount()
+      }, 1500)
+    }
+    const onRestored = () => {
+      console.info('[VinylScene] WebGL context restored')
+      if (restoreTimer) window.clearTimeout(restoreTimer)
+    }
+    el.addEventListener('webglcontextlost', onLost)
+    el.addEventListener('webglcontextrestored', onRestored)
+    return () => {
+      el.removeEventListener('webglcontextlost', onLost)
+      el.removeEventListener('webglcontextrestored', onRestored)
+      if (restoreTimer) window.clearTimeout(restoreTimer)
+    }
+  }, [gl, onNeedsRemount])
+  return null
 }
 
 // Tracks the `prefers-reduced-motion` media query.
@@ -88,7 +125,10 @@ float noise(vec2 p){
   vec2 u=f*f*(3.-2.*f);
   return mix(mix(a,b,u.x),mix(c,d,u.x),u.y);
 }
-float fbm(vec2 p){ float v=0.,a=.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.; a*=.5; } return v; }
+// 4 octaves (was 5): the field is blurred by main() below, so the finest octave
+// was invisible — and this shader runs full-screen twice per frame on project
+// pages (main render + the glass's transmission pass), so it's the hot path.
+float fbm(vec2 p){ float v=0.,a=.5; for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.; a*=.5; } return v; }
 
 // The colour field at a single uv sample.
 vec3 field(vec2 uv){
@@ -552,6 +592,7 @@ function ArcText({
   color,
   z,
   centerAngle = -Math.PI / 2,
+  fadeIn = 0.7,
 }: {
   text: string
   radius: number
@@ -559,10 +600,30 @@ function ArcText({
   color: string
   z: number
   centerAngle?: number
+  /** Seconds to fade the text in after mount (0 = instant). */
+  fadeIn?: number
 }) {
   const chars = useMemo(() => [...text], [text])
   const charAngle = (fontSize * 0.60) / radius // ~average glyph advance as an angle
   const total = (chars.length - 1) * charAngle
+  // Smooth fade-in: drive the glyph materials' opacity imperatively in useFrame
+  // (no per-frame React re-renders across ~56 <Text> children). Glyphs only
+  // appear once troika finishes its async sync, by which point the opacity is
+  // already being ramped — so the text eases in instead of popping.
+  const glyphRefs = useRef<(THREE.Object3D | null)[]>([])
+  const born = useRef<number | null>(null)
+  useFrame((state) => {
+    if (born.current === null) born.current = state.clock.elapsedTime
+    const k = fadeIn > 0 ? Math.min(1, (state.clock.elapsedTime - born.current) / fadeIn) : 1
+    const eased = k * k * (3 - 2 * k) // smoothstep
+    for (const g of glyphRefs.current) {
+      const m = (g as unknown as { material?: THREE.Material } | null)?.material
+      if (m) {
+        m.transparent = true
+        m.opacity = eased
+      }
+    }
+  })
   return (
     <group position={[0, 0, z]}>
       {chars.map((ch, i) => {
@@ -570,6 +631,9 @@ function ArcText({
         return (
           <Text
             key={i}
+            ref={(o: THREE.Object3D | null) => {
+              glyphRefs.current[i] = o
+            }}
             position={[Math.cos(theta) * radius, Math.sin(theta) * radius, 0]}
             rotation={[0, 0, theta + Math.PI / 2]}
             fontSize={fontSize}
@@ -677,15 +741,23 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
   return (
     <>
       {/* Empty-state hint — arced along the groove so it curves like the track
-          arcs, lying in the disc plane (tilts with the vinyl). */}
+          arcs, lying in the disc plane (tilts with the vinyl).
+          The LOCAL Suspense boundary is load-bearing: drei's <Text> SUSPENDS
+          while its font loads, and without a boundary inside the canvas that
+          suspension bubbled up to App's lazy(AppShell) fallback — unmounting
+          the entire shell (dark screen + spinner + WebGL context teardown)
+          the moment the hint mounted on an empty project. fallback={null}
+          keeps the wait invisible; the glyphs then fade in via ArcText. */}
       {showText && depth === 1 && tracks.length === 0 && !tracksLoading && (
-        <ArcText
-          text="No active tracks yet — add one above to start the record"
-          radius={0.72}
-          fontSize={0.018}
-          color="#6b6275"
-          z={cfg.zOffset + 0.02}
-        />
+        <Suspense fallback={null}>
+          <ArcText
+            text="No active tracks yet — add one above to start the record"
+            radius={0.72}
+            fontSize={0.018}
+            color="#6b6275"
+            z={cfg.zOffset + 0.02}
+          />
+        </Suspense>
       )}
       <group ref={groupRef}>
         {tracks.map((track, i) => {
@@ -797,7 +869,7 @@ function TrackCaption() {
 
 // The record: frosted-glass disc + cover label + spindle. Stage transform is
 // Theatre-keyframeable; spin & float are continuous loops with Leva-tuned speeds.
-function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?: boolean }) {
+function Record({ reducedMotion, showText, isTransitioning }: { reducedMotion: boolean; showText?: boolean; isTransitioning?: boolean }) {
   const grooveMap = useMemo(() => makeGrooveNormalMap(), [])
   const discGeo = useMemo(() => makeHoledDiscGeometry(), [])
   const labelCfg = useControls('Vinyl label', {
@@ -835,6 +907,11 @@ function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?
     // scene into an off-screen buffer at this resolution, this many times,
     // EVERY frame, so this is the single biggest GPU cost in the scene. Still
     // adjustable live via Leva if more clarity is needed for a demo/recording.
+    // NOTE: this schema must hold the FINAL tuned values only — Leva captures
+    // initial values once at mount, so putting transitional (isTransitioning)
+    // values here would lock the low-quality look in permanently whenever the
+    // Record first mounts mid sleeve-transition. The transition override is
+    // applied at runtime via `effectiveGlass` below instead.
     resolution: { value: isLowPowerLocal ? 512 : 1024, min: 256, max: 2048, step: 256 },
     samples: { value: isLowPowerLocal ? 2 : 4, min: 1, max: 20, step: 1 },
     transmission: { value: isLowPowerLocal ? 0.35 : 0.45, min: 0, max: 1, step: 0.01 },
@@ -853,6 +930,20 @@ function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?
   // Pull out the non-MeshTransmissionMaterial keys; the rest (glass) maps 1:1
   // to MeshTransmissionMaterial props.
   const { grooveDepth, glassKind, dispersion, throughSat, ...glass } = mat
+  const effectiveGlassKind = isTransitioning ? 'physical' : glassKind
+  const effectiveGlass = isTransitioning
+    ? {
+        ...glass,
+        transmission: 0.2,
+        thickness: 0.2,
+        roughness: 0.68,
+        chromaticAberration: 0,
+        anisotropy: 0,
+        distortion: 0,
+        distortionScale: 0,
+        temporalDistortion: 0,
+      }
+    : glass
 
   // Patch the physical glass so saturation is boosted on the disc's FINAL color
   // — i.e. only what refracts through it — without touching the backdrop.
@@ -984,15 +1075,15 @@ function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?
           {/* disc body — grooved glass with a real center hole; faces the camera
               (+Z) natively as an extruded ring. */}
           <mesh geometry={discGeo}>
-            {glassKind === 'physical' ? (
+            {effectiveGlassKind === 'physical' ? (
               // Native three transmission — crisper clean glass, with dispersion.
               <meshPhysicalMaterial
-                transmission={glass.transmission}
-                thickness={glass.thickness}
-                roughness={glass.roughness}
-                ior={glass.ior}
+                transmission={effectiveGlass.transmission}
+                thickness={effectiveGlass.thickness}
+                roughness={effectiveGlass.roughness}
+                ior={effectiveGlass.ior}
                 dispersion={dispersion}
-                color={glass.color}
+                color={effectiveGlass.color}
                 metalness={0}
                 normalMap={grooveMap}
                 normalScale={[grooveDepth, grooveDepth]}
@@ -1000,7 +1091,7 @@ function Record({ reducedMotion, showText }: { reducedMotion: boolean; showText?
               />
             ) : (
               <MeshTransmissionMaterial
-                {...glass}
+                {...effectiveGlass}
                 normalMap={grooveMap}
                 normalScale={[grooveDepth, grooveDepth]}
               />
@@ -1034,16 +1125,85 @@ export function VinylScene() {
 
   // Hide heavy text/font rendering during the sleeve entrance to avoid extra work.
   const [showText, setShowText] = useState(() => !useSleeveTransition.getState().active)
+  const activeTransition = useSleeveTransition((s) => s.active)
+  const isTransitioning = Boolean(activeTransition)
+
   useEffect(() => {
-    if (showText) return
-    const t = setTimeout(() => setShowText(true), DISC_ENTRANCE_S * 1000 + 120)
+    if (activeTransition) {
+      if (showText) {
+        console.debug('[VinylScene] deferring text render during sleeve transition', {
+          projectId: activeTransition.projectId,
+        })
+        setShowText(false)
+      }
+      return
+    }
+
+    const t = setTimeout(() => {
+      console.debug('[VinylScene] enabling text render after sleeve transition')
+      setShowText(true)
+    }, DISC_ENTRANCE_S * 1000 + 120)
+
     return () => clearTimeout(t)
-  }, [showText])
-  // The disc only appears once you're inside a project (depth > 0); on the
-  // dashboard (depth 0) only the shared 3D backdrop shows.
+  }, [activeTransition, showText])
+
   const showDisc = useDepthStore((s) => s.depth) > 0
   const isPageVisible = useIsPageVisible()
+  // Tracked per project id (not a one-shot boolean) so a SECOND card click
+  // after the first transition still acknowledges — the scene is app-mounted,
+  // so a never-reset ref would permanently block later transitions.
+  const ackedProjectId = useRef<string | null>(null)
+  useEffect(() => {
+    if (!activeTransition) {
+      ackedProjectId.current = null
+      return
+    }
+    if (ackedProjectId.current === activeTransition.projectId) return
+    if (!showDisc) {
+      console.debug('[VinylScene] waiting to acknowledge until disc is visible', { projectId: activeTransition.projectId })
+      return
+    }
+
+    ackedProjectId.current = activeTransition.projectId
+    console.debug('[VinylScene] acknowledging sleeve transition', { projectId: activeTransition.projectId })
+    useSleeveTransition.getState().acknowledge()
+  }, [activeTransition, showDisc])
   const reducedMotion = usePrefersReducedMotion()
+  // Warm up the 3D-text engine (troika) at browser idle: parsing the font and
+  // generating glyph SDFs uses its own GL context and was landing exactly at
+  // the heaviest moment (transition + shader compiles + transmission buffer
+  // alloc) — the "unsupported GPOS table" logs immediately preceding every
+  // WebGL context loss. Preloading makes that a one-time idle cost instead.
+  useEffect(() => {
+    let cancelled = false
+    const warm = () => {
+      if (cancelled || fontPreloadStarted) return
+      fontPreloadStarted = true
+      import('troika-three-text')
+        .then((mod) => {
+          const preload = (mod as { preloadFont?: (opts: object, cb: () => void) => void }).preloadFont
+          preload?.(
+            { characters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 —–-.,'!?()" },
+            () => console.debug('[VinylScene] 3D text font preloaded'),
+          )
+        })
+        .catch(() => {})
+    }
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    const idleId = w.requestIdleCallback ? w.requestIdleCallback(warm, { timeout: 3000 }) : window.setTimeout(warm, 1200)
+    return () => {
+      cancelled = true
+      if (w.requestIdleCallback) w.cancelIdleCallback?.(idleId as number)
+      else window.clearTimeout(idleId as number)
+    }
+  }, [])
+  // Bumped by ContextGuard when a lost WebGL context fails to restore — forces
+  // a full Canvas remount so the scene always recovers instead of staying blank.
+  const [canvasEpoch, setCanvasEpoch] = useState(0)
+  const remountCanvas = useCallback(() => setCanvasEpoch((e) => e + 1), [])
   const readoutRef = useRef<HTMLDivElement>(null)
   const poseRef = useRef<PoseSnapshot>({
     camera: { position: [0, 0, 0], lookAt: [0, 0, 0] },
@@ -1161,29 +1321,40 @@ export function VinylScene() {
         />
       )}
       <TrackCaption />
-      {/* Cap DPR for performance — lower on low-power devices. */}
+      {/* Cap DPR for performance — lower on low-power devices. Kept CONSTANT
+          for the session: toggling dpr on isTransitioning reallocated every
+          framebuffer at the heaviest animation moment (jank + context churn),
+          and R3F gl options are init-only anyway so per-state gl flags were
+          no-ops. */}
       {(() => {
         /* compute maxDpr in-place so JSX stays tidy */
         const maxDpr = typeof window !== 'undefined' ? (isLowPower ? 1 : Math.min(1.2, window.devicePixelRatio || 1)) : 1
         return (
           <Canvas
-        camera={{ position: [-0.09, -1.71, 1.19], fov: 38 }}
-        gl={{ antialias: true, alpha: true }}
-        // Capped DPR — keep visually sharp while cutting high-DPI cost.
-        dpr={[1, maxDpr]}
-        // Stop the render loop entirely while the tab is backgrounded, rather
-        // than continuing to render an invisible canvas at full rate. Clock-
-        // driven state (spin/float/backdrop time) simply resumes from where it
-        // left off when the tab is visible again — no data/behavior change.
-        frameloop={isPageVisible ? 'always' : 'never'}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: nav.adjust ? 50 : 5,
-          pointerEvents: nav.adjust ? 'auto' : 'none',
-        }}
-      >
-        <ambientLight intensity={lights.ambient} />
+            // key: remounts the whole canvas if a lost WebGL context never
+            // restores (see ContextGuard) — recovery from silent blank-outs.
+            key={canvasEpoch}
+            camera={{ position: [-0.09, -1.71, 1.19], fov: 38 }}
+            // powerPreference 'default' (not 'high-performance'): on dual-GPU
+            // machines forcing the discrete GPU both heats up fans and causes
+            // context losses when the OS switches GPUs — the scene is cheap
+            // enough now for the browser's own choice.
+            gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
+            // Capped DPR — keep visually sharp while cutting high-DPI cost.
+            dpr={[1, maxDpr]}
+            // Stop the render loop entirely while the tab is backgrounded, rather
+            // than continuing to render an invisible canvas at full rate. Clock-
+            // driven state (spin/float/backdrop time) simply resumes from where it
+            // left off when the tab is visible again — no data/behavior change.
+            frameloop={isPageVisible ? 'always' : 'never'}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: nav.adjust ? 50 : 5,
+              pointerEvents: nav.adjust ? 'auto' : 'none',
+            }}
+          >
+            <ambientLight intensity={lights.ambient} />
         <directionalLight position={[lights.keyPos.x, lights.keyPos.y, lights.keyPos.z]} intensity={lights.key} />
         <directionalLight
           position={[lights.fillPos.x, lights.fillPos.y, lights.fillPos.z]}
@@ -1205,8 +1376,9 @@ export function VinylScene() {
         ) : (
           <CameraRig />
         )}
+        <ContextGuard onNeedsRemount={remountCanvas} />
         {showBackdrop && <Backdrop />}
-        {showDisc && <Record reducedMotion={reducedMotion} showText={showText} />}
+        {showDisc && <Record reducedMotion={reducedMotion} showText={showText} isTransitioning={isTransitioning} />}
         <PoseCapture poseRef={poseRef} />
           </Canvas>
         )

@@ -21,11 +21,13 @@ export function TopBar() {
 
   const displayName = profile?.full_name || profile?.username || user?.email
 
+  // No crumb on the dashboard — the page's own "Projects" title already says
+  // where you are; the label only adds context once you've drilled in.
   const crumb = location.pathname.includes('/track/')
     ? 'Track'
     : location.pathname.startsWith('/project')
       ? 'Album'
-      : 'Projects'
+      : null
 
   // Close the menus when clicking outside
   useEffect(() => {
@@ -64,10 +66,14 @@ export function TopBar() {
       {/* Idle: fully transparent. On hover: full light-glass fill across the whole width, incl. over the left rail */}
       <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass-light border-b border-black/[0.06] shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] pointer-events-none" />
 
-      {/* Breadcrumb / context */}
+      {/* Breadcrumb / context — only when drilled into an album/track */}
       <div className="relative flex items-center gap-2.5 text-sm">
-        <span className="w-1.5 h-1.5 rounded-full bg-spectrum-warm" />
-        <span className="text-[#1a1620] font-medium">{crumb}</span>
+        {crumb && (
+          <>
+            <span className="w-1.5 h-1.5 rounded-full bg-spectrum-warm" />
+            <span className="text-[#1a1620] font-medium">{crumb}</span>
+          </>
+        )}
       </div>
 
       {/* Right cluster: notifications + user */}

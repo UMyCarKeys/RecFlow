@@ -4,17 +4,19 @@ import { motion } from 'framer-motion'
 import { useProject } from '@/hooks/useProject'
 import { useTracks } from '@/hooks/useTrack'
 import { useDepthStore } from '@/store/depthStore'
-import { useSleeveTransition, DISC_ENTRANCE_S } from '@/store/sleeveTransition'
+import { useSleeveTransition, UI_REVEAL_DELAY_S } from '@/store/sleeveTransition'
 import { MembersModal } from '@/components/project/MembersModal'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { uploadCover } from '@/lib/uploadCover'
 
 export function ProjectPage() {
   const { id = '' } = useParams()
-  const { project, members, loading: projLoading, addMember, updateMemberRole, removeMember, updateProject } = useProject(id)
+  const { project, members, loading: projLoading, addMember, updateMemberRole, removeMember, updateProject, deleteProject } =
+    useProject(id)
   const { tracks, loading: tracksLoading, addTrack } = useTracks(id)
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -22,6 +24,12 @@ export function ProjectPage() {
   const [newTrackTitle, setNewTrackTitle] = useState('')
   const [membersOpen, setMembersOpen] = useState(false)
   const [coverBusy, setCoverBusy] = useState(false)
+  const [projectError, setProjectError] = useState<string | null>(null)
+  // Archive is reversible (Restore fires immediately, no confirm — mirrors
+  // TrackPage's archive/restore pattern). Delete is permanent and cascades to
+  // every track/version/comment/task, so it gets its own, more severe dialog.
+  const [archiveConfirm, setArchiveConfirm] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const setDepth = useDepthStore((s) => s.setDepth)
   const setCoverUrl = useDepthStore((s) => s.setCoverUrl)
@@ -34,7 +42,7 @@ export function ProjectPage() {
   // `entrance` ref) — hold the header/title text hidden until that finishes
   // so it doesn't appear before the record does. A direct visit (refresh,
   // deep link) has no sleeve transition, so the header shows immediately.
-  const [cameFromSleeve] = useState(() => !!useSleeveTransition.getState().active)
+  const [cameFromSleeve] = useState(() => useSleeveTransition.getState().launched)
 
   useEffect(() => setDepth(1), [setDepth])
   // Publish this project's cover to the vinyl center label; clear on leave.
@@ -55,7 +63,9 @@ export function ProjectPage() {
   // Publish loading so the 3D empty-state hint doesn't flash while tracks load.
   useEffect(() => {
     setTracksLoading(tracksLoading)
-    return () => setTracksLoading(false)
+    // Reset to the store's "loading" default on leave, so the next project
+    // entry can't transiently read tracks=[] as "confirmed empty".
+    return () => setTracksLoading(true)
   }, [tracksLoading, setTracksLoading])
   // Drill into a track when its strip is clicked on the vinyl.
   useEffect(() => {
@@ -94,6 +104,34 @@ export function ProjectPage() {
     setAddingTrack(false)
   }
 
+  const handleArchive = async () => {
+    setProjectError(null)
+    const { error } = await updateProject({ archived: true })
+    if (error) {
+      setProjectError(error.message)
+      return
+    }
+    setArchiveConfirm(false)
+  }
+
+  const handleRestore = async () => {
+    setProjectError(null)
+    const { error } = await updateProject({ archived: false })
+    if (error) {
+      setProjectError(error.message)
+    }
+  }
+
+  const handleDelete = async () => {
+    setProjectError(null)
+    const { error } = await deleteProject()
+    if (error) {
+      setProjectError(error.message)
+      return
+    }
+    navigate('/')
+  }
+
   const activeTracks = tracks.filter((t) => !t.archived)
   const archivedCount = tracks.length - activeTracks.length
 
@@ -107,7 +145,10 @@ export function ProjectPage() {
         className="p-6 flex-shrink-0"
         initial={{ opacity: cameFromSleeve ? 0 : 1 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: cameFromSleeve ? DISC_ENTRANCE_S : 0, ease: [0.22, 1, 0.36, 1] }}
+        // Synced with the on-record 3D text: same start moment (UI_REVEAL_DELAY_S
+        // after this page mounts) and same 0.7s fade as ArcText's fadeIn, so the
+        // header and the record's text arrive together.
+        transition={{ duration: 0.7, delay: cameFromSleeve ? UI_REVEAL_DELAY_S : 0, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="flex items-center justify-between">
           <div id="project-title" className="min-w-0">
@@ -132,9 +173,34 @@ export function ProjectPage() {
             <Button variant="ghost" size="sm" onClick={() => setMembersOpen(true)}>
               Members{members.length > 0 ? ` · ${members.length}` : ''}
             </Button>
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => project.archived ? handleRestore() : setArchiveConfirm(true)}
+              >
+                {project.archived ? 'Restore' : 'Archive'}
+              </Button>
+            )}
+            {isOwner && (
+              <Button variant="danger" size="sm" onClick={() => setDeleteConfirm(true)}>Delete</Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => setAddingTrack(true)}>+ Add track</Button>
           </div>
         </div>
+
+        {projectError && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+            {projectError}
+          </div>
+        )}
+
+        {project.archived && (
+          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-black/[0.06] text-xs text-[#6b6275]">
+            This project is archived — it's hidden from the dashboard's main grid. Use
+            <span className="text-[#1a1620] font-medium"> Restore</span> to bring it back.
+          </div>
+        )}
 
         {addingTrack && (
           <form id="project-add-track-form" onSubmit={handleAddTrack} className="flex gap-2 mt-4 max-w-md">
@@ -177,6 +243,25 @@ export function ProjectPage() {
           onRemove={removeMember}
         />
       )}
+
+      <ConfirmDialog
+        open={archiveConfirm}
+        title="Archive this project?"
+        message="It will be hidden from the dashboard's main grid, but nothing is deleted — tracks, versions, comments and tasks are all preserved. You can restore it anytime from this page."
+        confirmLabel="Archive"
+        onConfirm={handleArchive}
+        onClose={() => setArchiveConfirm(false)}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm}
+        title="Delete this project?"
+        message="This permanently deletes the project and everything in it — every track, version, comment and task. Members lose access immediately. This cannot be undone; archiving is the reversible alternative."
+        confirmLabel="Delete permanently"
+        danger
+        onConfirm={handleDelete}
+        onClose={() => setDeleteConfirm(false)}
+      />
     </div>
   )
 }

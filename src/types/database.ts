@@ -34,6 +34,7 @@ export interface Project {
   created_at: string
   updated_at: string
   name_history: NameHistoryEntry[]
+  archived: boolean
 }
 
 export interface ProjectMember {
