@@ -13,6 +13,10 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
     <AnimatePresence>
       {open && (
         <motion.div
+          // data-ui-overlay: the 3D scene's window-level raycaster skips any
+          // click/hover inside this subtree, so a modal above the (pointer-
+          // events:none) canvas can't leak clicks through to the vinyl.
+          data-ui-overlay
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

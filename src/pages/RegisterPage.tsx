@@ -11,14 +11,19 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checkEmail, setCheckEmail] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     setLoading(true)
     setError('')
-    const { error: e2 } = await signUp(email, password, username)
+    const { data, error: e2 } = await signUp(email, password, username)
     if (e2) { setError(e2.message); setLoading(false); return }
+    // If email confirmation is on, Supabase returns a user but NO session —
+    // the account isn't usable until the emailed link is clicked. Tell the
+    // user instead of navigating into an app they'll just get bounced out of.
+    if (!data.session) { setCheckEmail(true); setLoading(false); return }
     navigate('/')
   }
 
@@ -27,6 +32,23 @@ export function RegisterPage() {
       <div id="register-container" className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-1 text-center">RecFlow</h1>
         <p className="text-muted text-sm text-center mb-8">Collaborative album versioning</p>
+
+        {checkEmail ? (
+          <div id="register-check-email" className="bg-surface-2 border border-white/8 rounded-2xl p-6 space-y-3 text-center">
+            <div className="w-11 h-11 mx-auto rounded-full bg-spectrum shadow-[0_0_24px_rgba(255,138,107,0.5)]" />
+            <h2 className="text-lg font-semibold text-white">Confirm your email</h2>
+            <p className="text-sm text-muted">
+              We sent a verification link to <span className="text-white font-medium">{email}</span>.
+              Click it to activate your account, then sign in.
+            </p>
+            <p className="text-xs text-muted">
+              No email? Check spam, or wait a minute and try again.
+            </p>
+            <Link to="/login" className="inline-block mt-1 text-sm text-accent-hover hover:underline">
+              Back to sign in
+            </Link>
+          </div>
+        ) : (
 
         <div id="register-card" className="bg-surface-2 border border-white/8 rounded-2xl p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white">Create account</h2>
@@ -64,6 +86,7 @@ export function RegisterPage() {
             <Link to="/login" className="text-accent-hover hover:underline">Sign in</Link>
           </p>
         </div>
+        )}
       </div>
     </div>
   )

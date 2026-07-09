@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { reportError } from '@/lib/errorReporting'
 
 interface Props {
   children: ReactNode
@@ -25,6 +26,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error) {
     console.error('[ErrorBoundary]', error)
+    reportError(error, { boundary: 'app' })
   }
 
   render() {

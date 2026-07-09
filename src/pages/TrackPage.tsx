@@ -14,6 +14,7 @@ import { CommentThread } from '@/components/comments/CommentThread'
 import { CompareLines } from '@/components/track/CompareLines'
 import { GifPicker } from '@/components/track/GifPicker'
 import { GifPostit } from '@/components/track/GifPostit'
+import { giphyConfigured } from '@/lib/giphy'
 import { EditableTitle } from '@/components/ui/EditableTitle'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -138,7 +139,11 @@ export function TrackPage() {
         </div>
 
         <div id="track-right-panel" className="flex-1 overflow-y-auto p-6 space-y-8">
-          {(track.gif_url || canEdit) && (
+          {/* GIF search needs a Giphy key; hide the "+ Add GIF" button when it
+              isn't configured so users don't hit a dead "not configured"
+              dialog. An already-set gif still renders and stays editable
+              (its Change action just surfaces the same config notice). */}
+          {(track.gif_url || (canEdit && giphyConfigured())) && (
             <div className="flex justify-end">
               {track.gif_url ? (
                 <GifPostit

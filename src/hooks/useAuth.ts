@@ -29,7 +29,16 @@ export function useAuth() {
     supabase.auth.signUp({
       email,
       password,
-      options: { data: { username } },
+      options: {
+        data: { username },
+        // Send the confirmation link back to wherever the app is actually
+        // running (dev port or prod domain) instead of Supabase's default
+        // Site URL — which pointed at a port with nothing listening
+        // ("localhost refused to connect"). NOTE: this exact origin must also
+        // be added to Supabase → Auth → URL Configuration → Redirect URLs, and
+        // the prod domain set as the Site URL.
+        emailRedirectTo: window.location.origin,
+      },
     })
 
   const signOut = () => supabase.auth.signOut()

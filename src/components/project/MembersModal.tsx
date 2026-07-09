@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Avatar } from '@/components/ui/Avatar'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -27,18 +27,28 @@ export function MembersModal({ open, onClose, ownerId, members, onAdd, onUpdateR
   const [addRole, setAddRole] = useState<MemberRole>('contributor')
   const [removing, setRemoving] = useState<ProjectMember | null>(null)
   const [busy, setBusy] = useState(false)
+  // Monotonic id so a slow earlier request can't overwrite a newer result set
+  // (was causing partial/"wrong" queries to win the race and show stale hits).
+  const searchSeq = useRef(0)
 
   const runSearch = async (q: string) => {
     setQuery(q)
-    if (!q.trim()) {
+    const term = q.trim()
+    if (!term) {
       setResults([])
       return
     }
+    const seq = ++searchSeq.current
+    // Search BOTH username and display name — people search by the name they
+    // see (full_name), but usernames default to the email prefix, so a
+    // username-only search missed most matches. Escape PostgREST's or() commas.
+    const safe = term.replace(/[%,()]/g, ' ')
     const { data } = await supabase
       .from('profiles')
       .select('id, username, full_name, avatar_url')
-      .ilike('username', `%${q.trim()}%`)
+      .or(`username.ilike.%${safe}%,full_name.ilike.%${safe}%`)
       .limit(6)
+    if (seq !== searchSeq.current) return // a newer search already returned
     setResults(((data as ProfileLite[]) ?? []).filter((p) => !members.some((m) => m.user_id === p.id)))
   }
 

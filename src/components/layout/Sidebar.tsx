@@ -37,6 +37,11 @@ export function Sidebar() {
         <nav id="sidebar-nav" className="flex-1 py-3 space-y-1">
           <RailLink to="/" label="Projects" icon={<HomeIcon />} />
         </nav>
+
+        {/* Pinned to the bottom of the rail: personal checklist */}
+        <nav id="sidebar-bottom" className="py-3">
+          <RailLink to="/tasks" label="Tasks" icon={<TasksIcon />} />
+        </nav>
       </div>
     </aside>
   )
@@ -67,6 +72,18 @@ function HomeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M2 6.5L8 2l6 4.5V14H10v-4H6v4H2V6.5z" />
+    </svg>
+  )
+}
+
+// Minimal checklist: a check with two list lines, matching the rail's stroke style.
+function TasksIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 4.5L4 6l2.5-3" />
+      <path d="M9 5h4.5" />
+      <path d="M2.5 10.5L4 12l2.5-3" />
+      <path d="M9 11h4.5" />
     </svg>
   )
 }

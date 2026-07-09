@@ -694,9 +694,26 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
       hit.object.worldToLocal(local.copy(hit.point))
       return { id: hit.object.userData.trackId as string, angle: Math.atan2(local.y, local.x) }
     }
+    // The canvas is pointer-events:none, so these window listeners see EVERY
+    // click/move — including ones meant for DOM UI that sits above the canvas
+    // (modals, inputs, buttons, menus). Without this guard, clicking a modal's
+    // search field raycasted straight through and selected a track behind it.
+    const isOverUI = (t: EventTarget | null): boolean =>
+      t instanceof Element &&
+      !!t.closest(
+        '[data-ui-overlay], a, button, input, textarea, select, label, [role="dialog"], [role="menu"], [role="listbox"], [contenteditable="true"]',
+      )
     const onMove = (e: PointerEvent) => {
-      const { id, angle } = pick(e.clientX, e.clientY)
       const st = useDepthStore.getState()
+      if (isOverUI(e.target)) {
+        if (st.hoverPoint) {
+          st.setHoveredTrackId(null)
+          st.setHoverPoint(null)
+          st.setHoverAngle(null)
+        }
+        return
+      }
+      const { id, angle } = pick(e.clientX, e.clientY)
       if (id !== st.hoveredTrackId) st.setHoveredTrackId(id) // avoid redundant re-renders
       if (id) {
         st.setHoverPoint({ x: e.clientX, y: e.clientY })
@@ -707,6 +724,7 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
       }
     }
     const onClick = (e: MouseEvent) => {
+      if (isOverUI(e.target)) return // let DOM UI handle its own clicks
       const { id } = pick(e.clientX, e.clientY)
       const sel = useDepthStore.getState().onSelectTrack
       if (id && sel) sel(id)
