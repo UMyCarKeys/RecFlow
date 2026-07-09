@@ -9,11 +9,26 @@ import { Avatar } from '@/components/ui/Avatar'
 export function TopBar() {
   const { user, signOut } = useAuth()
   const { profile, updateProfile } = useProfile()
-  const { tasks, count } = useMyTasks(user?.id)
+  const { openTasks, memberships, count: taskCount } = useMyTasks(user?.id)
   const setBarHover = useChromeStore((s) => s.setBarHover)
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
+  // Membership notices don't have a done-state like tasks, so "seen" is when
+  // the bell was last opened (persisted) — the badge counts only newer joins.
+  const [bellSeenAt, setBellSeenAt] = useState(() => Number(localStorage.getItem('recflow-bell-seen') ?? 0))
+  const unseenJoins = memberships.filter((m) => new Date(m.joined_at).getTime() > bellSeenAt)
+  const count = taskCount + unseenJoins.length
+  const openBell = () => {
+    setBellOpen((v) => {
+      if (!v) {
+        const now = Date.now()
+        setBellSeenAt(now)
+        localStorage.setItem('recflow-bell-seen', String(now))
+      }
+      return !v
+    })
+  }
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
@@ -81,7 +96,7 @@ export function TopBar() {
         {/* Notification bell */}
         <div ref={bellRef} className="relative">
           <button
-            onClick={() => setBellOpen((v) => !v)}
+            onClick={openBell}
             className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/[0.05] transition-colors"
             title="Tasks assigned to you"
           >
@@ -94,11 +109,26 @@ export function TopBar() {
           </button>
           {bellOpen && (
             <div className="absolute right-0 mt-2 w-72 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
+              {memberships.length > 0 && (
+                <>
+                  <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">New projects</p>
+                  {memberships.map((m) => (
+                    <Link
+                      key={m.id}
+                      to={`/project/${m.project_id}`}
+                      onClick={() => setBellOpen(false)}
+                      className="block px-2 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors truncate"
+                    >
+                      Added to <span className="font-medium">{m.project_name}</span>
+                    </Link>
+                  ))}
+                </>
+              )}
               <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">Assigned to you</p>
-              {tasks.length === 0 ? (
+              {openTasks.length === 0 ? (
                 <p className="px-2 py-2 text-xs text-[#6b6275]">Nothing outstanding.</p>
               ) : (
-                tasks.map((t) => (
+                openTasks.slice(0, 6).map((t) => (
                   <Link
                     key={t.id}
                     to={`/project/${t.project_id}/track/${t.track_id}`}
@@ -109,6 +139,13 @@ export function TopBar() {
                   </Link>
                 ))
               )}
+              <Link
+                to="/tasks"
+                onClick={() => setBellOpen(false)}
+                className="block px-2 py-2 mt-1 rounded-lg text-xs text-[#6b6275] hover:text-[#1a1620] hover:bg-black/[0.05] transition-colors border-t border-black/[0.06]"
+              >
+                View all tasks →
+              </Link>
             </div>
           )}
         </div>
