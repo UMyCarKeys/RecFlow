@@ -1,4 +1,13 @@
-const KEY = import.meta.env.VITE_GIPHY_API_KEY as string | undefined
+// One or two keys (a primary + optional fallback). Free Giphy keys are
+// rate-limited per key, so with several concurrent users the primary can hit
+// 429/403 and return nothing; the fallback key lets the request retry.
+// NOTE: these are VITE_ (build-time) vars — they must be set in the DEPLOY
+// build environment (Cloudflare Pages → Settings → Environment variables),
+// not only in local .env, or the deployed site ships with no key.
+const KEYS = [
+  import.meta.env.VITE_GIPHY_API_KEY,
+  import.meta.env.VITE_GIPHY_API_KEY_2,
+].filter((k): k is string => typeof k === 'string' && k.length > 0)
 
 export interface GifResult {
   id: string
@@ -8,7 +17,7 @@ export interface GifResult {
   title: string
 }
 
-export const giphyConfigured = () => !!KEY
+export const giphyConfigured = () => KEYS.length > 0
 
 interface GiphyImage {
   url?: string
@@ -34,12 +43,24 @@ function mapResults(items: GiphyItem[]): GifResult[] {
 }
 
 export async function searchGifs(query: string): Promise<GifResult[]> {
-  if (!KEY) return []
-  const endpoint = query.trim()
-    ? `https://api.giphy.com/v1/gifs/search?api_key=${KEY}&q=${encodeURIComponent(query)}&limit=18&rating=pg-13&bundle=messaging_non_clips`
-    : `https://api.giphy.com/v1/gifs/trending?api_key=${KEY}&limit=18&rating=pg-13`
-  const res = await fetch(endpoint)
-  if (!res.ok) return []
-  const json = await res.json()
-  return mapResults((json.data as GiphyItem[]) ?? [])
+  const q = query.trim()
+  for (const key of KEYS) {
+    const endpoint = q
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${encodeURIComponent(q)}&limit=18&rating=pg-13&bundle=messaging_non_clips`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${key}&limit=18&rating=pg-13`
+    let res: Response
+    try {
+      res = await fetch(endpoint)
+    } catch {
+      continue // network error — try the next key
+    }
+    if (res.ok) {
+      const json = await res.json()
+      return mapResults((json.data as GiphyItem[]) ?? [])
+    }
+    // Rate limit / quota → fall through to the next key; any other error is
+    // not key-specific, so stop.
+    if (res.status !== 429 && res.status !== 403) break
+  }
+  return []
 }
