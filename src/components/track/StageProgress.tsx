@@ -28,7 +28,7 @@ export function StageProgress({ stage, onChange }: StageProgressProps) {
                 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all',
                 isActive && 'bg-accent/20 text-accent ring-1 ring-accent/40',
                 isCompleted && !isActive && 'text-accent/80 hover:text-accent',
-                !isActive && !isCompleted && 'text-[#6b6275] hover:text-[#1a1620]',
+                !isActive && !isCompleted && 'text-muted hover:text-ink',
               )}
             >
               <span
@@ -36,7 +36,7 @@ export function StageProgress({ stage, onChange }: StageProgressProps) {
                   'w-4 h-4 rounded-full flex items-center justify-center text-[10px] border flex-shrink-0',
                   isActive && 'bg-accent border-accent text-white',
                   isCompleted && !isActive && 'bg-accent/30 border-accent/50 text-accent',
-                  !isActive && !isCompleted && 'border-black/20 text-[#6b6275]',
+                  !isActive && !isCompleted && 'border-line/20 text-muted',
                 )}
               >
                 {isCompleted ? '✓' : i + 1}
@@ -46,7 +46,7 @@ export function StageProgress({ stage, onChange }: StageProgressProps) {
             {i < STAGE_ORDER.length - 1 && (
               <div
                 id={`stage-connector-${key}`}
-                className={cn('h-px w-5 mx-0.5 flex-shrink-0', i < currentIndex ? 'bg-accent/40' : 'bg-black/10')}
+                className={cn('h-px w-5 mx-0.5 flex-shrink-0', i < currentIndex ? 'bg-accent/40' : 'bg-line/10')}
               />
             )}
           </div>

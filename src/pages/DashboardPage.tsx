@@ -34,8 +34,8 @@ export function DashboardPage() {
         transition={{ duration: 0.35, ease: 'easeOut' }}
       >
         <div id="dashboard-title">
-          <h1 className="text-3xl font-light tracking-wide text-[#1a1620]">Projects</h1>
-          <p className="text-[#6b6275] text-sm mt-1.5 font-light">Your album workspaces</p>
+          <h1 className="text-3xl font-light tracking-wide text-ink">Projects</h1>
+          <p className="text-muted text-sm mt-1.5 font-light">Your album workspaces</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New project</Button>
       </motion.div>
@@ -51,7 +51,7 @@ export function DashboardPage() {
           animate={{ opacity: 1 }}
           className="py-8"
         >
-          <p className="text-[#6b6275] text-sm mb-5">
+          <p className="text-muted text-sm mb-5">
             You don't have any projects yet. Explore the demo to see how RecFlow works, or create your first project.
           </p>
           <Link to="/demo" className="block group/demo w-full max-w-[220px]">

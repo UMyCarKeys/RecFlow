@@ -127,7 +127,7 @@ export function ProjectCard({ project, progress = 0 }: ProjectCardProps) {
 
             {/* Progress at the bottom */}
             <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2">
-              <div className="flex-1 h-1 rounded-full bg-black/35 overflow-hidden">
+              <div className="flex-1 h-1 rounded-full bg-line/35 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-spectrum-warm transition-[width] duration-500"
                   style={{ width: `${pct}%` }}

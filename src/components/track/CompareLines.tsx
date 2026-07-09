@@ -29,11 +29,11 @@ export function CompareLines({ versions, trackTitle, activeVersionId, onSelectVe
   }
 
   return (
-    <div id="compare-lines" className="card-glass border border-black/[0.06] rounded-xl p-4 space-y-3">
+    <div id="compare-lines" className="card-glass border border-line/[0.06] rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Lines of inspiration</h3>
-          <p className="text-[11px] text-[#9a8fa3] mt-0.5">Explore parallel takes — you'll commit to one past Mix.</p>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Lines of inspiration</h3>
+          <p className="text-[11px] text-faint mt-0.5">Explore parallel takes — you'll commit to one past Mix.</p>
         </div>
         {lines.length > 1 && <Switch checked={abLock} onChange={setAbLock} label="A/B lock" />}
       </div>
@@ -48,14 +48,14 @@ export function CompareLines({ versions, trackTitle, activeVersionId, onSelectVe
               key={line.label}
               onClick={() => onSelectVersion(line.latest.id)}
               className={`rounded-lg p-3 cursor-pointer transition-colors border ${
-                selected ? 'border-accent/50 bg-accent/10' : 'field-glass border-black/[0.06] hover:border-black/[0.12]'
+                selected ? 'border-accent/50 bg-accent/10' : 'field-glass border-line/[0.06] hover:border-line/[0.12]'
               }`}
             >
               <div className="flex items-center gap-2">
                 <MiniDisc hue={hue} spinning={playingLine && isPlaying} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[#1a1620] font-medium truncate">{line.label}</p>
-                  <p className="text-[11px] text-[#6b6275]">
+                  <p className="text-sm text-ink font-medium truncate">{line.label}</p>
+                  <p className="text-[11px] text-muted">
                     v{line.latest.version_number} · {line.versions.length} take{line.versions.length > 1 ? 's' : ''}
                   </p>
                 </div>

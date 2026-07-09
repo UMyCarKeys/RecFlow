@@ -85,9 +85,9 @@ export function TrackPage() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div id="track-header" className="relative z-10 p-6 border-b border-black/[0.06] flex-shrink-0">
-        <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-[#6b6275] mb-3">
-          <Link to={`/project/${projectId}`} className="hover:text-[#1a1620] transition-colors">← Back to album</Link>
+      <div id="track-header" className="relative z-10 p-6 border-b border-line/[0.06] flex-shrink-0">
+        <div id="track-breadcrumb" className="flex items-center gap-2 text-xs text-muted mb-3">
+          <Link to={`/project/${projectId}`} className="hover:text-ink transition-colors">← Back to album</Link>
         </div>
         <div id="track-title-row" className="flex items-center justify-between gap-3 mb-4">
           <EditableTitle
@@ -95,7 +95,7 @@ export function TrackPage() {
             history={track.title_history ?? []}
             canEdit={canEdit}
             onSave={handleRename}
-            className="text-2xl font-light tracking-wide text-[#1a1620]"
+            className="text-2xl font-light tracking-wide text-ink"
           />
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={() => (track.archived ? updateTrack({ archived: false }) : setArchiveConfirm(true))}>
@@ -106,9 +106,9 @@ export function TrackPage() {
         </div>
 
         {track.archived && (
-          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-black/[0.06] text-xs text-[#6b6275]">
+          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-line/[0.06] text-xs text-muted">
             This track is archived — it won't be used for this project and is excluded from the album's progress. Use
-            <span className="text-[#1a1620] font-medium"> Restore</span> to bring it back.
+            <span className="text-ink font-medium"> Restore</span> to bring it back.
           </div>
         )}
 
@@ -116,12 +116,12 @@ export function TrackPage() {
       </div>
 
       <div id="track-split" className="relative z-10 flex-1 overflow-hidden flex">
-        <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-black/[0.06] overflow-y-auto p-4 space-y-3">
-          <h2 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Versions</h2>
+        <div id="track-versions-panel" className="w-80 flex-shrink-0 border-r border-line/[0.06] overflow-y-auto p-4 space-y-3">
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">Versions</h2>
           {versionsLoading ? (
             <div id="track-versions-loading" className="flex justify-center py-8"><Spinner /></div>
           ) : versions.length === 0 ? (
-            <p id="track-versions-empty" className="text-xs text-[#6b6275]">No versions yet. Upload one above.</p>
+            <p id="track-versions-empty" className="text-xs text-muted">No versions yet. Upload one above.</p>
           ) : (
             versions.map((v, i) => (
               <motion.div
@@ -171,7 +171,7 @@ export function TrackPage() {
           {selectedVersion ? (
             <CommentThread versionId={selectedVersion.id} projectId={projectId} members={members} />
           ) : (
-            <p id="track-no-version-hint" className="text-[#6b6275] text-sm">Select a version or upload one to see comments and tasks.</p>
+            <p id="track-no-version-hint" className="text-muted text-sm">Select a version or upload one to see comments and tasks.</p>
           )}
         </div>
       </div>
@@ -195,7 +195,7 @@ export function TrackPage() {
       />
 
       <Modal open={commitTarget !== null} onClose={() => setCommitTarget(null)} title="Commit to one direction">
-        <p className="text-sm text-[#6b6275] leading-relaxed">
+        <p className="text-sm text-muted leading-relaxed">
           Moving past Mix means choosing the line to carry forward. The other lines will be set aside — you won't lose
           them, but they leave the active record so the project keeps moving.
         </p>
@@ -207,12 +207,12 @@ export function TrackPage() {
                 key={line.label}
                 onClick={() => setKeepVariant(line.variant)}
                 className={`w-full flex items-center gap-2 p-2.5 rounded-lg border transition-colors ${
-                  active ? 'border-accent bg-accent/10' : 'border-black/10 hover:border-black/20'
+                  active ? 'border-accent bg-accent/10' : 'border-line/10 hover:border-line/20'
                 }`}
               >
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: variantHue(line.variant) }} />
-                <span className="text-sm text-[#1a1620] flex-1 text-left truncate">{line.label}</span>
-                <span className="text-xs text-[#6b6275]">v{line.latest.version_number}</span>
+                <span className="text-sm text-ink flex-1 text-left truncate">{line.label}</span>
+                <span className="text-xs text-muted">v{line.latest.version_number}</span>
               </button>
             )
           })}

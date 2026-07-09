@@ -21,12 +21,12 @@ export function TasksPage() {
   return (
     <div id="tasks-page" className="p-8 max-w-3xl mx-auto">
       <div id="tasks-header" className="mb-7">
-        <h1 className="text-3xl font-light tracking-wide text-[#1a1620]">Tasks</h1>
-        <p className="text-[#6b6275] text-sm mt-1.5 font-light">Assigned to you, across every project</p>
+        <h1 className="text-3xl font-light tracking-wide text-ink">Tasks</h1>
+        <p className="text-muted text-sm mt-1.5 font-light">Assigned to you, across every project</p>
       </div>
 
       {openTasks.length === 0 ? (
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-[#6b6275] py-6">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-muted py-6">
           Nothing outstanding — anything assigned to you will show up here.
         </motion.p>
       ) : (
@@ -44,7 +44,7 @@ export function TasksPage() {
         <div id="tasks-done" className="mt-9">
           <button
             onClick={() => setShowDone((v) => !v)}
-            className="flex items-center gap-2 text-xs font-semibold text-[#6b6275] uppercase tracking-wide hover:text-[#1a1620] transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wide hover:text-ink transition-colors"
           >
             <span className={`inline-block transition-transform ${showDone ? 'rotate-90' : ''}`}>›</span>
             Completed · {doneTasks.length}
@@ -67,7 +67,7 @@ export function TasksPage() {
 function TaskRow({ task, done = false, onToggle }: { task: MyTask; done?: boolean; onToggle: () => void }) {
   return (
     <div
-      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-black/[0.06] card-glass transition-colors hover:border-black/[0.12] ${
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-line/[0.06] card-glass transition-colors hover:border-line/[0.12] ${
         done ? 'opacity-60' : ''
       }`}
     >
@@ -77,7 +77,7 @@ function TaskRow({ task, done = false, onToggle }: { task: MyTask; done?: boolea
         className={`w-[18px] h-[18px] flex-shrink-0 rounded-full border flex items-center justify-center transition-colors ${
           done
             ? 'bg-accent border-accent text-white'
-            : 'border-[#b3aabb] text-transparent hover:border-accent hover:text-accent/50'
+            : 'border-faint/80 text-transparent hover:border-accent hover:text-accent/50'
         }`}
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -86,15 +86,15 @@ function TaskRow({ task, done = false, onToggle }: { task: MyTask; done?: boolea
       </button>
 
       <Link to={`/project/${task.project_id}/track/${task.track_id}`} className="flex-1 min-w-0">
-        <p className={`text-sm text-[#1a1620] truncate ${done ? 'line-through' : ''}`}>{task.title}</p>
-        {task.body && <p className="text-xs text-[#6b6275] font-light truncate mt-0.5">{task.body}</p>}
+        <p className={`text-sm text-ink truncate ${done ? 'line-through' : ''}`}>{task.title}</p>
+        {task.body && <p className="text-xs text-muted font-light truncate mt-0.5">{task.body}</p>}
       </Link>
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {task.due_date && !done && (
-          <span className="text-[10px] text-[#6b6275] tabular-nums">{task.due_date}</span>
+          <span className="text-[10px] text-muted tabular-nums">{task.due_date}</span>
         )}
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.05] text-[#6b6275] truncate max-w-[120px]">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-line/[0.05] text-muted truncate max-w-[120px]">
           {task.project_name}
         </span>
       </div>

@@ -157,9 +157,9 @@ export function ProjectPage() {
               history={project.name_history ?? []}
               canEdit={isOwner}
               onSave={handleRename}
-              className="text-2xl font-light tracking-wide text-[#1a1620]"
+              className="text-2xl font-light tracking-wide text-ink"
             />
-            {project.description && <p className="text-[#6b6275] text-sm mt-1 font-light">{project.description}</p>}
+            {project.description && <p className="text-muted text-sm mt-1 font-light">{project.description}</p>}
           </div>
           <div className="flex items-center gap-2">
             {isOwner && (
@@ -196,9 +196,9 @@ export function ProjectPage() {
         )}
 
         {project.archived && (
-          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-black/[0.06] text-xs text-[#6b6275]">
+          <div className="mb-4 px-3 py-2 rounded-lg card-glass border border-line/[0.06] text-xs text-muted">
             This project is archived — it's hidden from the dashboard's main grid. Use
-            <span className="text-[#1a1620] font-medium"> Restore</span> to bring it back.
+            <span className="text-ink font-medium"> Restore</span> to bring it back.
           </div>
         )}
 

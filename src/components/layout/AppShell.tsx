@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { PlayerBar } from './PlayerBar'
 import { Toast } from '@/components/ui/Toast'
+import { ThemeFx } from '@/components/ui/ThemeSwitcher'
 import { VinylScene } from '@/components/disc/VinylScene'
 import { SleeveTransition } from '@/components/disc/SleeveTransition'
 
@@ -29,6 +30,8 @@ export function AppShell() {
       <PlayerBar />
       <Toast />
       <SleeveTransition />
+      {/* lights-flicker overlay for theme switches */}
+      <ThemeFx />
     </div>
   )
 }

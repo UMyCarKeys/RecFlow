@@ -5,6 +5,7 @@ import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
 import { useSleeveTransition, DISC_ENTRANCE_S, TEXT_REVEAL_AFTER_CLEAR_S } from '@/store/sleeveTransition'
+import { useThemeStore, THEME_SCENE } from '@/store/themeStore'
 // Bundled locally (Noto Sans, OFL) so 3D text never fetches from a CDN at
 // runtime — the jsDelivr font request was a prod CSP/reliability liability.
 import textFontUrl from '@/assets/fonts/text-sans.woff'
@@ -119,6 +120,12 @@ uniform float u_depth;
 uniform float u_sat;
 uniform float u_contrast;
 uniform float u_blur;
+// Theme palette (set per-frame from THEME_SCENE — bright / earth / dark)
+uniform vec3 u_base;
+uniform vec3 u_c1;
+uniform vec3 u_c2;
+uniform vec3 u_c3;
+uniform vec3 u_c4;
 varying vec2 vUv;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -145,14 +152,12 @@ vec3 field(vec2 uv){
   vec2 q = vec2(fbm(p+vec2(0.,t)+mouseOff), fbm(p+vec2(5.2,-t)+mouseOff));
   vec2 r = vec2(fbm(p+2.*q+vec2(1.7,9.2)+t*.5), fbm(p+2.*q+vec2(8.3,2.8)-t*.5));
   float f = fbm(p+2.5*r);
-  vec3 base=vec3(.965,.95,.955);
-  vec3 coral=vec3(1.,.541,.42), amber=vec3(1.,.769,.42), rose=vec3(1.,.42,.616), violet=vec3(.722,.549,1.);
-  vec3 col=base;
-  col=mix(col,rose,  smoothstep(0.,.85,f)*.55);
-  col=mix(col,coral, smoothstep(.15,1.,r.x)*.55);
-  col=mix(col,amber, smoothstep(.25,1.,q.y)*.48);
-  col=mix(col,violet,smoothstep(.35,1.,r.y)*.5);
-  col=mix(base,col,smoothstep(0.,.8,f+.25));
+  vec3 col=u_base;
+  col=mix(col,u_c3, smoothstep(0.,.85,f)*.55);
+  col=mix(col,u_c1, smoothstep(.15,1.,r.x)*.55);
+  col=mix(col,u_c2, smoothstep(.25,1.,q.y)*.48);
+  col=mix(col,u_c4, smoothstep(.35,1.,r.y)*.5);
+  col=mix(u_base,col,smoothstep(0.,.8,f+.25));
   float lum=dot(col,vec3(.299,.587,.114));
   col=mix(vec3(lum),col,u_sat);
   col=(col-0.5)*u_contrast+0.5; // push contrast so the glass has something to refract
@@ -213,6 +218,11 @@ function Backdrop() {
       u_sat: { value: 1.45 },
       u_contrast: { value: 1.0 },
       u_blur: { value: 0.02 }, // soft frost on the environment only (this plane)
+      u_base: { value: new THREE.Vector3(...THEME_SCENE.bright.base) },
+      u_c1: { value: new THREE.Vector3(...THEME_SCENE.bright.c1) },
+      u_c2: { value: new THREE.Vector3(...THEME_SCENE.bright.c2) },
+      u_c3: { value: new THREE.Vector3(...THEME_SCENE.bright.c3) },
+      u_c4: { value: new THREE.Vector3(...THEME_SCENE.bright.c4) },
     }),
     [], // eslint-disable-line react-hooks/exhaustive-deps
   )
@@ -224,6 +234,14 @@ function Backdrop() {
     uniforms.u_depth.value = useDepthStore.getState().depth
     uniforms.u_sat.value = bg.saturation
     uniforms.u_contrast.value = bg.contrast
+    // Theme palette — set every frame (cheap), switched instantly under the
+    // ThemeFx "lights" flicker that masks the jump.
+    const pal = THEME_SCENE[useThemeStore.getState().theme]
+    uniforms.u_base.value.set(...pal.base)
+    uniforms.u_c1.value.set(...pal.c1)
+    uniforms.u_c2.value.set(...pal.c2)
+    uniforms.u_c3.value.set(...pal.c3)
+    uniforms.u_c4.value.set(...pal.c4)
 
     // Lock the plane a fixed distance in front of the camera, facing it, scaled
     // to exactly fill the frustum — so it covers the frame at any camera angle.
@@ -658,6 +676,8 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
   const tracksLoading = useDepthStore((s) => s.tracksLoading)
   const depth = useDepthStore((s) => s.depth)
   const hoveredId = useDepthStore((s) => s.hoveredTrackId)
+  // In-scene text color per theme — dark's backdrop needs light glyphs.
+  const ink3d = THEME_SCENE[useThemeStore((s) => s.theme)].ink3d
   const groupRef = useRef<THREE.Group>(null!)
   const raysRef = useRef<THREE.Group>(null!)
   const { camera, gl } = useThree()
@@ -758,7 +778,11 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
   })
 
   const n = Math.max(tracks.length, 1)
-  const ringThk = (cfg.outerR - cfg.innerR) / n
+  // Cap the ring thickness: with 1–2 tracks an even split of the groove band
+  // produced slab-thick arcs that swallowed the disc. Capped rings are then
+  // CENTERED in the band so a lone slim arc doesn't hug the outer edge.
+  const ringThk = Math.min((cfg.outerR - cfg.innerR) / n, 0.16)
+  const bandOuter = (cfg.outerR + cfg.innerR) / 2 + (n * ringThk) / 2
 
   return (
     <>
@@ -776,14 +800,14 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
             text="No active tracks yet — add one above to start the record"
             radius={0.72}
             fontSize={0.018}
-            color="#6b6275"
+            color={ink3d}
             z={cfg.zOffset + 0.02}
           />
         </Suspense>
       )}
       <group ref={groupRef}>
         {tracks.map((track, i) => {
-          const outer = cfg.outerR - i * ringThk
+          const outer = bandOuter - i * ringThk
           const inner = outer - ringThk * (1 - cfg.ringGap)
           const prog = STAGE_VALUE[track.stage as keyof typeof STAGE_VALUE] ?? 0
           const released = prog >= 0.999
@@ -795,6 +819,13 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
           // Fixed start at the lower-left (where the arc began before); the fill
           // grows counter-clockwise from there as progress increases.
           const arcStart = -Math.PI / 2 - 0.3
+          // Persistent name label: curved along the ring's centerline, ending just
+          // clockwise of the arc's start — it reads like a dial label pointing at
+          // its arc, so tracks are identifiable before any hover.
+          const labelR = (inner + outer) / 2
+          const labelSize = Math.min(0.045, ringThk * 0.48)
+          const title = track.title.length > 18 ? track.title.slice(0, 17) + '…' : track.title
+          const labelTotal = (title.length - 1) * ((labelSize * 0.6) / labelR)
           return (
             <group key={track.id}>
               {/* colored progress arc — OPAQUE and set INSIDE the disc (behind the
@@ -807,6 +838,18 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
                 <ringGeometry args={[inner, outer, 128, 1, arcStart, arc]} />
                 <meshBasicMaterial visible={false} />
               </mesh>
+              {showText && (
+                <Suspense fallback={null}>
+                  <ArcText
+                    text={title}
+                    radius={labelR}
+                    fontSize={labelSize}
+                    color={ink3d}
+                    z={cfg.zOffset + 0.015}
+                    centerAngle={arcStart - 0.07 - labelTotal / 2}
+                  />
+                </Suspense>
+              )}
             </group>
           )
         })}
@@ -816,7 +859,7 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
       {rays.enabled && (
         <group ref={raysRef}>
           {tracks.map((track, i) => {
-            const outer = cfg.outerR - i * ringThk
+            const outer = bandOuter - i * ringThk
             const prog = STAGE_VALUE[track.stage as keyof typeof STAGE_VALUE] ?? 0
             const released = prog >= 0.999
             const color = released ? TRACK_GOLD : trackHue(track.id)
@@ -867,10 +910,10 @@ function TrackCaption() {
           y1={OFF_Y}
           x2={dirX < 0 ? 0 : OFF_X}
           y2={0}
-          stroke="#6b6275"
+          stroke="rgb(var(--muted))"
           strokeWidth={1}
         />
-        <circle cx={dirX < 0 ? OFF_X : 0} cy={OFF_Y} r={1.8} fill="#6b6275" />
+        <circle cx={dirX < 0 ? OFF_X : 0} cy={OFF_Y} r={1.8} fill="rgb(var(--muted))" />
       </svg>
       <span
         style={{
@@ -880,7 +923,7 @@ function TrackCaption() {
           transform: `translate(${dirX < 0 ? '-100%' : '0'}, -100%)`,
           whiteSpace: 'nowrap',
           font: '500 14px system-ui, -apple-system, sans-serif',
-          color: '#6b6275',
+          color: 'rgb(var(--muted))',
         }}
       >
         {track.title}
@@ -1137,6 +1180,8 @@ export function VinylScene() {
   const nav = useControls('Camera', {
     adjust: { value: false, label: 'adjust (orbit / zoom / walk)' },
   })
+  // Scene light level per theme (dark = a dimmer room).
+  const themeLight = THEME_SCENE[useThemeStore((s) => s.theme)].light
   // Lightweight device-power detection to pick safer defaults.
   const isLowPower = useMemo(() => {
     if (typeof navigator === 'undefined') return false
@@ -1363,11 +1408,13 @@ export function VinylScene() {
               pointerEvents: nav.adjust ? 'auto' : 'none',
             }}
           >
-            <ambientLight intensity={lights.ambient} />
-        <directionalLight position={[lights.keyPos.x, lights.keyPos.y, lights.keyPos.z]} intensity={lights.key} />
+            {/* Theme scales the whole rig — "dark" halves the room's light. The
+                switch is instantaneous; the ThemeFx flicker masks the jump. */}
+            <ambientLight intensity={lights.ambient * themeLight} />
+        <directionalLight position={[lights.keyPos.x, lights.keyPos.y, lights.keyPos.z]} intensity={lights.key * themeLight} />
         <directionalLight
           position={[lights.fillPos.x, lights.fillPos.y, lights.fillPos.z]}
-          intensity={lights.fill}
+          intensity={lights.fill * themeLight}
           color={lights.fillColor}
         />
         {env.preset !== 'none' && (

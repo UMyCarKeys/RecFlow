@@ -6,6 +6,7 @@ export interface AddOpts {
   parentId?: string
   timestampS?: number
   task?: { label: string; assigneeId: string | null }
+  gifUrl?: string
 }
 
 const COMMENT_SELECT = '*, profiles(*)'
@@ -71,6 +72,7 @@ export function useThread(versionId: string, projectId: string) {
         author_id: authorId,
         parent_id: opts.parentId ?? null,
         timestamp_s: opts.timestampS ?? null,
+        gif_url: opts.gifUrl ?? null,
       })
       .select(COMMENT_SELECT)
       .single()

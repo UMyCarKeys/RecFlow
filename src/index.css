@@ -3,6 +3,91 @@
 @tailwind utilities;
 
 @layer base {
+  /* ---- Theme tokens ----------------------------------------------------
+     Color tokens are RGB triplets so Tailwind alpha modifiers keep working
+     (tailwind.config.js maps them via rgb(var(--x) / <alpha-value>)).
+     html[data-theme] is set pre-render in main.tsx and by themeStore.
+     Three moods: bright (warm airy), earth (natural greens + neon leaf),
+     dark (washed black, faint washed accents). */
+  :root,
+  [data-theme='bright'] {
+    --ink: 26 22 32;
+    --ink-soft: 42 36 51;
+    --ink-body: 58 51 64;
+    --muted: 107 98 117;
+    --faint: 154 143 163;
+    --line: 0 0 0; /* hairlines/hover fills — black on light themes */
+    --page: 244 240 241;
+    --surface: 26 22 32;
+    --surface-1: 31 26 38;
+    --surface-2: 36 31 43;
+    --surface-3: 46 40 56;
+    --accent: 255 138 107;
+    --accent-hover: 255 164 137;
+    --accent-amber: 255 196 107;
+    --accent-rose: 255 107 157;
+    --accent-violet: 184 140 255;
+    --grad-spectrum: linear-gradient(135deg, #ff8a6b 0%, #ff6b9d 38%, #b88cff 100%);
+    --grad-spectrum-warm: linear-gradient(135deg, #ffc46b 0%, #ff8a6b 55%, #ff6b9d 100%);
+    --glass: rgba(36, 31, 43, 0.55);
+    --glass-strong: rgba(31, 26, 38, 0.78);
+    --glass-chrome: rgba(250, 247, 248, 0.55);
+    --glass-card: rgba(255, 255, 255, 0.5);
+    --glass-field: rgba(255, 255, 255, 0.62);
+  }
+
+  [data-theme='earth'] {
+    --ink: 30 33 24;
+    --ink-soft: 46 50 38;
+    --ink-body: 58 62 48;
+    --muted: 104 110 88;
+    --faint: 146 150 126;
+    --line: 30 40 20;
+    --page: 236 233 223;
+    --surface: 24 28 20;
+    --surface-1: 30 34 24;
+    --surface-2: 38 42 30;
+    --surface-3: 48 52 38;
+    --accent: 138 176 58; /* leafy green with a neon edge */
+    --accent-hover: 158 199 74;
+    --accent-amber: 210 178 90;
+    --accent-rose: 193 122 78; /* terracotta */
+    --accent-violet: 122 143 90; /* moss */
+    --grad-spectrum: linear-gradient(135deg, #7a8f5a 0%, #c17a4e 45%, #9ccb3b 100%);
+    --grad-spectrum-warm: linear-gradient(135deg, #d0b25a 0%, #c17a4e 55%, #9ccb3b 100%);
+    --glass: rgba(40, 44, 30, 0.55);
+    --glass-strong: rgba(30, 34, 24, 0.78);
+    --glass-chrome: rgba(238, 235, 222, 0.55);
+    --glass-card: rgba(248, 246, 234, 0.5);
+    --glass-field: rgba(250, 248, 240, 0.62);
+  }
+
+  [data-theme='dark'] {
+    --ink: 240 234 240;
+    --ink-soft: 214 206 216;
+    --ink-body: 200 192 204;
+    --muted: 168 159 176;
+    --faint: 125 116 136;
+    --line: 255 255 255; /* hairlines/hover fills flip to white */
+    --page: 20 17 24;
+    --surface: 14 12 18;
+    --surface-1: 20 17 26;
+    --surface-2: 26 22 34;
+    --surface-3: 36 31 46;
+    --accent: 217 138 114; /* washed coral */
+    --accent-hover: 232 158 134;
+    --accent-amber: 205 176 122;
+    --accent-rose: 202 128 148;
+    --accent-violet: 158 138 196;
+    --grad-spectrum: linear-gradient(135deg, #d98a72 0%, #ca8094 38%, #9e8ac4 100%);
+    --grad-spectrum-warm: linear-gradient(135deg, #cdb07a 0%, #d98a72 55%, #ca8094 100%);
+    --glass: rgba(30, 26, 38, 0.6);
+    --glass-strong: rgba(20, 17, 26, 0.82);
+    --glass-chrome: rgba(22, 19, 28, 0.6);
+    --glass-card: rgba(32, 28, 40, 0.55);
+    --glass-field: rgba(40, 35, 50, 0.6);
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
@@ -15,8 +100,8 @@
   }
 
   body {
-    background: #1a1620;
-    color: #f4ece8;
+    background: rgb(var(--page));
+    color: rgb(var(--ink));
     font-family: 'Manrope', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -45,30 +130,45 @@
     100% { transform: translateX(360%); }
   }
 
-  /* Glass panel surface used across the immersive UI */
+  /* Glass panel surfaces — all theme-driven (see the token blocks above) */
   .glass {
-    background: rgba(36, 31, 43, 0.55);
+    background: var(--glass);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
   .glass-strong {
-    background: rgba(31, 26, 38, 0.78);
+    background: var(--glass-strong);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
   }
-  /* Light glass for the chrome (nav + top bar) on the bright background */
+  /* Chrome glass (nav + top bar) */
   .glass-light {
-    background: rgba(250, 247, 248, 0.55);
+    background: var(--glass-chrome);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
-  /* Frosted light card + field surfaces for content on the bright background */
+  /* Frosted card + field surfaces for content */
   .card-glass {
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--glass-card);
     backdrop-filter: blur(16px) saturate(1.1);
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
   }
   .field-glass {
-    background: rgba(255, 255, 255, 0.62);
+    background: var(--glass-field);
+  }
+
+  /* Theme switch — reads like the room lights flicking off/on. Applied to a
+     full-screen black overlay by ThemeFx for one animation cycle. */
+  @keyframes lights-flicker {
+    0% { opacity: 0; }
+    8% { opacity: 0.92; }
+    18% { opacity: 0.35; }
+    30% { opacity: 0.96; }
+    46% { opacity: 0.18; }
+    60% { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+  .theme-fx-flicker {
+    animation: lights-flicker 0.55s ease-out both;
   }
 }

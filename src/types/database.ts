@@ -85,6 +85,7 @@ export interface Comment {
   parent_id: string | null
   author_id: string
   body: string
+  gif_url: string | null
   timestamp_s: number | null
   created_at: string
   updated_at: string

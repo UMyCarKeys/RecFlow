@@ -44,8 +44,8 @@ export function DemoPage() {
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-light tracking-wide text-[#1a1620]">{DEMO_PROJECT_NAME}</h1>
-            <p className="text-[#6b6275] text-sm mt-1 font-light">A sample project — explore how RecFlow works.</p>
+            <h1 className="text-2xl font-light tracking-wide text-ink">{DEMO_PROJECT_NAME}</h1>
+            <p className="text-muted text-sm mt-1 font-light">A sample project — explore how RecFlow works.</p>
           </div>
           <Button onClick={() => navigate('/')}>Create your project</Button>
         </div>
@@ -75,10 +75,10 @@ function DemoTrackDetail({ track }: { track: DemoTrack }) {
 
       {track.stage === 'idea' && track.ideas.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Idea Board</h3>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Idea Board</h3>
           {track.ideas.map((idea, i) => (
-            <div key={i} className="p-3 rounded-lg field-glass border border-black/[0.08]">
-              <p className="text-sm text-[#1a1620]/90 leading-relaxed mb-1.5">{idea.text}</p>
+            <div key={i} className="p-3 rounded-lg field-glass border border-line/[0.08]">
+              <p className="text-sm text-ink/90 leading-relaxed mb-1.5">{idea.text}</p>
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-spectrum-warm" />
                 <span className="text-xs text-accent truncate">{idea.label}</span>
@@ -90,19 +90,19 @@ function DemoTrackDetail({ track }: { track: DemoTrack }) {
 
       {track.versions.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Versions</h3>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Versions</h3>
           {track.versions.map((v, i) => (
-            <div key={v.id} className="rounded-xl border border-black/[0.08] card-glass p-3">
+            <div key={v.id} className="rounded-xl border border-line/[0.08] card-glass p-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-black/[0.05] text-accent">v{v.version_number}</span>
+                <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-line/[0.05] text-accent">v{v.version_number}</span>
                 {i === 0 && <span className="text-xs px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">latest</span>}
                 {v.variant && (
                   <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: `${variantHue(v.variant)}22`, color: variantHue(v.variant) }}>{v.variant}</span>
                 )}
                 {v.tags.map((t) => <Tag key={t} label={t} />)}
               </div>
-              <p className="text-sm text-[#1a1620]/80 mt-1.5">{v.description}</p>
-              <div className="flex items-center gap-2 mt-2 text-xs text-[#6b6275]">
+              <p className="text-sm text-ink/80 mt-1.5">{v.description}</p>
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted">
                 <Avatar name={v.uploader} size="sm" />
                 {v.uploader} · {timeAgo(v.at)}
               </div>
@@ -113,24 +113,24 @@ function DemoTrackDetail({ track }: { track: DemoTrack }) {
 
       {track.comments.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-[#6b6275] uppercase tracking-wider">Comments &amp; tasks</h3>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Comments &amp; tasks</h3>
           {track.comments.map((c) => (
             <div key={c.id} className="flex gap-3">
               <Avatar name={c.author} size="sm" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-[#1a1620]">{c.author}</span>
+                  <span className="text-xs font-semibold text-ink">{c.author}</span>
                   {c.timestamp_s != null && (
                     <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent/20 text-accent-hover">{formatDuration(c.timestamp_s)}</span>
                   )}
-                  <span className="text-xs text-[#6b6275]">{timeAgo(c.at)}</span>
+                  <span className="text-xs text-muted">{timeAgo(c.at)}</span>
                 </div>
-                <p className="text-sm text-[#1a1620]/80 mt-1">{c.body}</p>
+                <p className="text-sm text-ink/80 mt-1">{c.body}</p>
                 {c.task && (
-                  <div className="mt-2 flex items-center gap-2 p-2 rounded-lg field-glass border border-black/[0.08]">
-                    <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${c.task.done ? 'bg-accent border-accent text-white' : 'border-black/30 text-transparent'}`}>✓</span>
-                    <span className={`text-xs flex-1 ${c.task.done ? 'line-through text-[#6b6275]' : 'text-[#1a1620]/90'}`}>{c.task.title}</span>
-                    <span className="flex items-center gap-1 text-xs text-[#6b6275]"><Avatar name={c.task.assignee} size="sm" />{c.task.assignee}</span>
+                  <div className="mt-2 flex items-center gap-2 p-2 rounded-lg field-glass border border-line/[0.08]">
+                    <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${c.task.done ? 'bg-accent border-accent text-white' : 'border-line/30 text-transparent'}`}>✓</span>
+                    <span className={`text-xs flex-1 ${c.task.done ? 'line-through text-muted' : 'text-ink/90'}`}>{c.task.title}</span>
+                    <span className="flex items-center gap-1 text-xs text-muted"><Avatar name={c.task.assignee} size="sm" />{c.task.assignee}</span>
                   </div>
                 )}
               </div>
@@ -139,7 +139,7 @@ function DemoTrackDetail({ track }: { track: DemoTrack }) {
         </div>
       )}
 
-      <p className="text-[11px] text-[#6b6275]/70 pt-1">This is sample content. Create or join a real project to comment, assign tasks and upload audio.</p>
+      <p className="text-[11px] text-muted/70 pt-1">This is sample content. Create or join a real project to comment, assign tasks and upload audio.</p>
     </div>
   )
 }

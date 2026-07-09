@@ -2,6 +2,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { initErrorReporting } from './lib/errorReporting'
+import { loadInitialTheme } from './store/themeStore'
+
+// Apply the saved theme BEFORE first paint so there's no bright flash for
+// earth/dark users (the CSS variables key off html[data-theme]).
+document.documentElement.dataset.theme = loadInitialTheme()
 
 // No-op unless this is a production build with VITE_SENTRY_DSN set.
 initErrorReporting()

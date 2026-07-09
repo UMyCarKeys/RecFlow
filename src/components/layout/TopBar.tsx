@@ -5,6 +5,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useMyTasks } from '@/hooks/useMyTasks'
 import { useChromeStore } from '@/store/chromeStore'
 import { Avatar } from '@/components/ui/Avatar'
+import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher'
 
 export function TopBar() {
   const { user, signOut } = useAuth()
@@ -79,25 +80,26 @@ export function TopBar() {
       className="group/topbar relative h-14 flex-shrink-0 flex items-center justify-between px-5 z-30"
     >
       {/* Idle: fully transparent. On hover: full light-glass fill across the whole width, incl. over the left rail */}
-      <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass-light border-b border-black/[0.06] shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] pointer-events-none" />
+      <div className="absolute top-0 bottom-0 -left-[260px] right-0 opacity-0 group-hover/topbar:opacity-100 transition-opacity duration-300 glass-light border-b border-line/[0.06] shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] pointer-events-none" />
 
       {/* Breadcrumb / context — only when drilled into an album/track */}
       <div className="relative flex items-center gap-2.5 text-sm">
         {crumb && (
           <>
             <span className="w-1.5 h-1.5 rounded-full bg-spectrum-warm" />
-            <span className="text-[#1a1620] font-medium">{crumb}</span>
+            <span className="text-ink font-medium">{crumb}</span>
           </>
         )}
       </div>
 
-      {/* Right cluster: notifications + user */}
+      {/* Right cluster: mood + notifications + user */}
       <div className="relative flex items-center gap-1">
+        <ThemeSwitcher />
         {/* Notification bell */}
         <div ref={bellRef} className="relative">
           <button
             onClick={openBell}
-            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/[0.05] transition-colors"
+            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-line/[0.05] transition-colors"
             title="Tasks assigned to you"
           >
             <BellIcon active={count > 0} />
@@ -108,32 +110,32 @@ export function TopBar() {
             )}
           </button>
           {bellOpen && (
-            <div data-ui-overlay className="absolute right-0 mt-2 w-72 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
+            <div data-ui-overlay className="absolute right-0 mt-2 w-72 rounded-xl glass-light border border-line/[0.08] shadow-xl p-2 z-50">
               {memberships.length > 0 && (
                 <>
-                  <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">New projects</p>
+                  <p className="px-2 py-1 text-xs font-semibold text-muted uppercase tracking-wide">New projects</p>
                   {memberships.map((m) => (
                     <Link
                       key={m.id}
                       to={`/project/${m.project_id}`}
                       onClick={() => setBellOpen(false)}
-                      className="block px-2 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors truncate"
+                      className="block px-2 py-2 rounded-lg text-sm text-ink hover:bg-line/[0.05] transition-colors truncate"
                     >
                       Added to <span className="font-medium">{m.project_name}</span>
                     </Link>
                   ))}
                 </>
               )}
-              <p className="px-2 py-1 text-xs font-semibold text-[#6b6275] uppercase tracking-wide">Assigned to you</p>
+              <p className="px-2 py-1 text-xs font-semibold text-muted uppercase tracking-wide">Assigned to you</p>
               {openTasks.length === 0 ? (
-                <p className="px-2 py-2 text-xs text-[#6b6275]">Nothing outstanding.</p>
+                <p className="px-2 py-2 text-xs text-muted">Nothing outstanding.</p>
               ) : (
                 openTasks.slice(0, 6).map((t) => (
                   <Link
                     key={t.id}
                     to={`/project/${t.project_id}/track/${t.track_id}`}
                     onClick={() => setBellOpen(false)}
-                    className="block px-2 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors truncate"
+                    className="block px-2 py-2 rounded-lg text-sm text-ink hover:bg-line/[0.05] transition-colors truncate"
                   >
                     {t.title}
                   </Link>
@@ -142,7 +144,7 @@ export function TopBar() {
               <Link
                 to="/tasks"
                 onClick={() => setBellOpen(false)}
-                className="block px-2 py-2 mt-1 rounded-lg text-xs text-[#6b6275] hover:text-[#1a1620] hover:bg-black/[0.05] transition-colors border-t border-black/[0.06]"
+                className="block px-2 py-2 mt-1 rounded-lg text-xs text-muted hover:text-ink hover:bg-line/[0.05] transition-colors border-t border-line/[0.06]"
               >
                 View all tasks →
               </Link>
@@ -155,16 +157,16 @@ export function TopBar() {
         <button
           id="top-bar-user"
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-2.5 rounded-full pl-1 pr-3 py-1 hover:bg-black/[0.05] transition-colors"
+          className="flex items-center gap-2.5 rounded-full pl-1 pr-3 py-1 hover:bg-line/[0.05] transition-colors"
         >
           <Avatar name={displayName} size="sm" />
-          <span className="text-sm text-[#1a1620] max-w-0 group-hover/topbar:max-w-[160px] overflow-hidden whitespace-nowrap transition-[max-width] duration-300">
+          <span className="text-sm text-ink max-w-0 group-hover/topbar:max-w-[160px] overflow-hidden whitespace-nowrap transition-[max-width] duration-300">
             {displayName}
           </span>
         </button>
 
         {menuOpen && (
-          <div data-ui-overlay className="absolute right-0 mt-2 w-56 rounded-xl glass-light border border-black/[0.08] shadow-xl p-2 z-50">
+          <div data-ui-overlay className="absolute right-0 mt-2 w-56 rounded-xl glass-light border border-line/[0.08] shadow-xl p-2 z-50">
             {editing ? (
               <input
                 value={nameInput}
@@ -176,19 +178,19 @@ export function TopBar() {
                 }}
                 autoFocus
                 placeholder="Display name"
-                className="w-full field-glass border border-black/10 rounded-lg px-3 py-2 text-sm text-[#1a1620] placeholder:text-[#9a8fa3] focus:outline-none focus:border-accent"
+                className="w-full field-glass border border-line/10 rounded-lg px-3 py-2 text-sm text-ink placeholder:text-faint focus:outline-none focus:border-accent"
               />
             ) : (
               <button
                 onClick={startEdit}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm text-[#1a1620] hover:bg-black/[0.05] transition-colors"
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-ink hover:bg-line/[0.05] transition-colors"
               >
                 Edit display name
               </button>
             )}
             <button
               onClick={signOut}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-accent-rose hover:bg-black/[0.05] transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-accent-rose hover:bg-line/[0.05] transition-colors"
             >
               Sign out
             </button>
@@ -211,7 +213,7 @@ function BellIcon({ active }: { active: boolean }) {
       strokeWidth="1.4"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={active ? '' : 'text-[#6b6275]'}
+      className={active ? '' : 'text-muted'}
     >
       <path d="M8 2a4 4 0 0 0-4 4c0 3-1.2 4-1.2 4h10.4S12 9 12 6a4 4 0 0 0-4-4z" />
       <path d="M6.8 13a1.4 1.4 0 0 0 2.4 0" />
