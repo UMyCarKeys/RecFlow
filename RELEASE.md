@@ -24,8 +24,16 @@ while a **Blocker** is open; "ship-with" issues get a tracked ticket.
 - [ ] `VITE_SENTRY_DSN` set in the host's BUILD environment (Vite bakes env at
       build time) — error reporting silently stays off without it
 - [ ] Staging/dev use a separate Supabase project so QA can't touch real data
-- [ ] Supabase Auth → URL configuration lists the production domain
-      (redirects break silently otherwise)
+- [ ] **Supabase → Auth → URL Configuration**: Site URL = production domain,
+      and Redirect URLs include EVERY origin users sign up from (the prod
+      domain, plus `http://localhost:5173` for local testing). The email
+      verification link uses these — a stale/missing entry is what caused
+      "localhost refused to connect" when clicking the confirm link.
+- [ ] Decide email confirmation policy (Auth → Providers → Email → "Confirm
+      email"). If ON, new users see the "Confirm your email" screen and must
+      click the link before signing in; if OFF, they're logged in immediately.
+- [ ] `VITE_GIPHY_API_KEY` set on the build if the GIF feature should be
+      available — without it the "+ Add GIF" button is hidden (no dead dialog)
 
 ## 4. Hosting / headers
 - [ ] CSP allows: Supabase origin (`connect-src`), blob workers
