@@ -9,7 +9,6 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { DemoPage } from '@/pages/DemoPage'
 import { ProjectPage } from '@/pages/ProjectPage'
 import { TrackPage } from '@/pages/TrackPage'
-import { TasksPage } from '@/pages/TasksPage'
 import { Spinner } from '@/components/ui/Spinner'
 
 // Lazy-loaded so its heavy deps (three.js/@react-three, WaveSurfer) are only
@@ -55,14 +54,6 @@ export default function App() {
               element={
                 <motion.div key="dashboard" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">
                   <DashboardPage />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/tasks"
-              element={
-                <motion.div key="tasks" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">
-                  <TasksPage />
                 </motion.div>
               }
             />

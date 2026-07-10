@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useCallback, useState, Suspense } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { MeshTransmissionMaterial, OrbitControls, Environment, Text } from '@react-three/drei'
+import { MeshTransmissionMaterial, OrbitControls, Environment, Text, Html } from '@react-three/drei'
 import { useControls, button, Leva } from 'leva'
 import * as THREE from 'three'
 import { useDepthStore } from '@/store/depthStore'
@@ -819,13 +819,13 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
           // Fixed start at the lower-left (where the arc began before); the fill
           // grows counter-clockwise from there as progress increases.
           const arcStart = -Math.PI / 2 - 0.3
-          // Persistent name label: curved along the ring's centerline, ending just
-          // clockwise of the arc's start — it reads like a dial label pointing at
-          // its arc, so tracks are identifiable before any hover.
+          // Default name tag: the SAME leader-line callout the hover shows, but
+          // anchored at the arc's start (its lower-left tip). While this track
+          // is hovered the anchored tag hides and the cursor-following caption
+          // takes over — un-hovering snaps it back here. <Html> re-projects the
+          // 3D anchor every frame, so the tag rides the disc's float bob.
           const labelR = (inner + outer) / 2
-          const labelSize = Math.min(0.045, ringThk * 0.48)
-          const title = track.title.length > 18 ? track.title.slice(0, 17) + '…' : track.title
-          const labelTotal = (title.length - 1) * ((labelSize * 0.6) / labelR)
+          const tagA = arcStart - 0.05
           return (
             <group key={track.id}>
               {/* colored progress arc — OPAQUE and set INSIDE the disc (behind the
@@ -838,17 +838,14 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
                 <ringGeometry args={[inner, outer, 128, 1, arcStart, arc]} />
                 <meshBasicMaterial visible={false} />
               </mesh>
-              {showText && (
-                <Suspense fallback={null}>
-                  <ArcText
-                    text={title}
-                    radius={labelR}
-                    fontSize={labelSize}
-                    color={ink3d}
-                    z={cfg.zOffset + 0.015}
-                    centerAngle={arcStart - 0.07 - labelTotal / 2}
-                  />
-                </Suspense>
+              {showText && depth === 1 && !isH && (
+                <Html
+                  position={[Math.cos(tagA) * labelR, Math.sin(tagA) * labelR, cfg.zOffset + 0.01]}
+                  zIndexRange={[12, 0]}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  <TrackTag title={track.title} />
+                </Html>
               )}
             </group>
           )
@@ -884,6 +881,36 @@ function TrackRings({ showText = true }: { showText?: boolean }) {
         </group>
       )}
     </>
+  )
+}
+
+// Default name tag for each arc — visually identical to the hover callout
+// (leader line + dot + name) but extending up-LEFT from the arc's start point.
+// Rendered through drei <Html> so it tracks its 3D anchor every frame.
+function TrackTag({ title }: { title: string }) {
+  const OFF_X = 40
+  const OFF_Y = 40
+  const label = title.length > 22 ? title.slice(0, 21) + '…' : title
+  return (
+    <div style={{ position: 'relative', pointerEvents: 'none' }}>
+      <svg width={OFF_X + 8} height={OFF_Y + 8} style={{ position: 'absolute', left: -OFF_X, top: -OFF_Y, overflow: 'visible' }}>
+        <line x1={OFF_X} y1={OFF_Y} x2={0} y2={0} stroke="rgb(var(--muted))" strokeWidth={1} />
+        <circle cx={OFF_X} cy={OFF_Y} r={1.8} fill="rgb(var(--muted))" />
+      </svg>
+      <span
+        style={{
+          position: 'absolute',
+          left: -OFF_X,
+          top: -OFF_Y,
+          transform: 'translate(-100%, -100%)',
+          whiteSpace: 'nowrap',
+          font: '500 13px system-ui, -apple-system, sans-serif',
+          color: 'rgb(var(--muted))',
+        }}
+      >
+        {label}
+      </span>
+    </div>
   )
 }
 

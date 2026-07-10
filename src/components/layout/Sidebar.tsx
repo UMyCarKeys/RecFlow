@@ -1,9 +1,15 @@
 import { NavLink } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useChromeStore } from '@/store/chromeStore'
+import { usePlayerStore } from '@/store/playerStore'
 
 export function Sidebar() {
   const { railHover, barHover, setRailHover } = useChromeStore()
+  const tasksOpen = useChromeStore((s) => s.tasksOpen)
+  const setTasksOpen = useChromeStore((s) => s.setTasksOpen)
+  // Lift the bottom icon above the media player bar (h-14) when one is up,
+  // so it never gets covered.
+  const hasPlayer = usePlayerStore((s) => !!s.activeVersionId)
   const chromeHover = railHover || barHover
 
   return (
@@ -38,9 +44,20 @@ export function Sidebar() {
           <RailLink to="/" label="Projects" icon={<HomeIcon />} />
         </nav>
 
-        {/* Pinned to the bottom of the rail: personal checklist */}
-        <nav id="sidebar-bottom" className="py-3">
-          <RailLink to="/tasks" label="Tasks" icon={<TasksIcon />} />
+        {/* Pinned to the bottom of the rail: personal checklist — opens the
+            in-place TasksPanel flyout (no navigation). */}
+        <nav id="sidebar-bottom" className={`py-3 transition-[margin] duration-300 ${hasPlayer ? 'mb-14' : ''}`}>
+          <button
+            onClick={() => setTasksOpen(!tasksOpen)}
+            className={`w-full relative flex items-center h-11 border-l-2 transition-colors ${
+              tasksOpen ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
+            }`}
+          >
+            <span className="w-[66px] flex justify-center flex-shrink-0"><TasksIcon /></span>
+            <span className="text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
+              Tasks
+            </span>
+          </button>
         </nav>
       </div>
     </aside>

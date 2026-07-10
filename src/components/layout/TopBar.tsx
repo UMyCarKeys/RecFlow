@@ -141,13 +141,15 @@ export function TopBar() {
                   </Link>
                 ))
               )}
-              <Link
-                to="/tasks"
-                onClick={() => setBellOpen(false)}
-                className="block px-2 py-2 mt-1 rounded-lg text-xs text-muted hover:text-ink hover:bg-line/[0.05] transition-colors border-t border-line/[0.06]"
+              <button
+                onClick={() => {
+                  setBellOpen(false)
+                  useChromeStore.getState().setTasksOpen(true)
+                }}
+                className="block w-full text-left px-2 py-2 mt-1 rounded-lg text-xs text-muted hover:text-ink hover:bg-line/[0.05] transition-colors border-t border-line/[0.06]"
               >
                 View all tasks →
-              </Link>
+              </button>
             </div>
           )}
         </div>

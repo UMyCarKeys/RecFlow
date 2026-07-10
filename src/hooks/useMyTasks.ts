@@ -96,8 +96,13 @@ export function useMyTasks(userId?: string) {
     refetch()
     // Any change to my tasks or my memberships → refetch (simpler and more
     // robust than patching local state per event type).
+    // Topic must be unique PER HOOK INSTANCE: supabase.channel() returns the
+    // existing channel for an already-used topic, so a second component using
+    // this hook (bell + tasks panel) would call .on() on a channel that's
+    // already subscribed — which throws ("cannot add postgres_changes
+    // callbacks after subscribe()") and crashed the tasks page.
     const channel = supabase
-      .channel(`me:${userId}`)
+      .channel(`me:${userId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'tasks', filter: `assignee_id=eq.${userId}` },

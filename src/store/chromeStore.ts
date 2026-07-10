@@ -8,13 +8,18 @@ import { create } from 'zustand'
 interface ChromeState {
   railHover: boolean
   barHover: boolean
+  /** The My Tasks flyout panel (opened from the sidebar icon / the bell). */
+  tasksOpen: boolean
   setRailHover: (v: boolean) => void
   setBarHover: (v: boolean) => void
+  setTasksOpen: (v: boolean) => void
 }
 
 export const useChromeStore = create<ChromeState>((set) => ({
   railHover: false,
   barHover: false,
+  tasksOpen: false,
   setRailHover: (railHover) => set({ railHover }),
   setBarHover: (barHover) => set({ barHover }),
+  setTasksOpen: (tasksOpen) => set({ tasksOpen }),
 }))
